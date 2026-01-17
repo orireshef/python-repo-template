@@ -5,16 +5,40 @@ alwaysApply: true
 
 # Session Start Checklist
 Run once at the start of a new session/conversation:
-1. [ ] Create log file: `logs/YYYY-MM-DD_HH-MM.md` (or `logs/<story>/...` if on a story)
-2. [ ] Write the goal/task in the log
+1. [ ] **Read `logs/.active`** — this tells you the current context (log directory)
+2. [ ] **Read recent logs** from that directory — where did we leave off?
 3. [ ] Check `IMPLEMENTATION_PLAN.md` — what's the current scope? Any relevant context?
+4. [ ] Create/continue log file in the active directory: `YYYY-MM-DD_HH-MM.md`
+5. [ ] Write the goal/task in the log
+
+If `logs/.active` doesn't exist or is empty, ask the user which context to work in.
+
+## Context Lock
+Once you declare an active context (log directory), you are **locked** to it for the session.
+- **NEVER switch log directories without explicit user approval**
+- If the user asks for something outside your current context, ASK before switching
+- Switching context means: reading/writing logs in a different directory than declared
+
+**Active context file:** `logs/.active`
+- Read this file FIRST before reading any logs
+- Contains a single line: the path to the active log directory (e.g., `logs/my-story/` or `logs/`)
+- Update this file when switching context (with user approval)
+
+**Session start flow:**
+1. Read `logs/.active` to know your context
+2. Read recent logs from that directory
+3. Continue or create a new log file there
 
 # Every Turn Checklist
 Run mentally on EVERY response:
-1. [ ] **Think in the log** — offload reasoning to the log file, not just in your head
-2. [ ] **Stay in scope** — does this touch areas outside my current task? If yes → ask human
-3. [ ] **Check for contradictions** — would this change conflict with existing plan/rules? If yes → ask human
-4. [ ] **Update artifacts** — log your thinking; update IMPLEMENTATION_PLAN.md if task status changes
+1. [ ] **Check `logs/.active`** — am I working in the correct context? If mismatch → stop and clarify
+2. [ ] **Think in the log** — offload reasoning to the log file, not just in your head
+3. [ ] **Stay in scope** — does this touch areas outside my current task? If yes → ask human
+4. [ ] **Stay in context** — if task requires switching log directory → ask human first, then update `.active`
+5. [ ] **Check for contradictions** — would this change conflict with existing plan/rules? If yes → ask human
+6. [ ] **Update artifacts** — log your thinking; update IMPLEMENTATION_PLAN.md if task status changes
+
+**Soft reminder:** Periodically re-read your logs to remember where you are. You don't need to read every turn, but check when you feel lost or context is slipping.
 
 When in doubt, ASK. Don't assume — get human guidance.
 

@@ -43,8 +43,17 @@ Avoid unnecessary "Enterprise" patterns like AbstractFactories unless strictly r
     - API Payloads.
 - **Validation:** Use Pydantic's validation to ensure data integrity at the system boundary.
 
+# Linting & Formatting
+- **Tool:** `ruff` (replaces flake8, isort, black)
+- **Run lint:** `uv run ruff check .`
+- **Run format:** `uv run ruff format .`
+- **Auto-fix:** `uv run ruff check --fix .`
+- Configuration is in `pyproject.toml` under `[tool.ruff]`
+
 # Testing Strategy
 - **Framework:** `pytest`
+- **Run tests:** `uv run pytest`
+- **With coverage:** `uv run pytest --cov`
 - **Unit Tests:**
     - Must be fast and isolated.
     - **MOCK** all external inputs/outputs.
