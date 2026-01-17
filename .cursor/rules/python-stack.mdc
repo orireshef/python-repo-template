@@ -1,0 +1,56 @@
+---
+description: "Python development standards, DDD principles, Pydantic usage, and Configuration rules."
+globs: *.py,.yaml,*.yml,requirements.txt,Dockerfile
+alwaysApply: false
+---
+
+# Domain-Driven Design (DDD) Implementation
+We follow DDD but **do not overcomplicate**. The structure should match the complexity of the requirements.
+
+## 1. Project Structure (Right-Sized)
+Avoid unnecessary "Enterprise" patterns like AbstractFactories unless strictly required.
+- **src/domain/**: Pure business logic.
+    - `models.py`: Pydantic entities (Behavior + Data).
+    - No external dependencies (except Pydantic).
+- **src/infrastructure/**: Implementation details.
+    - Database adaptors, API clients, File system tools.
+- **src/interface/**: Entry points.
+    - CLI commands, API routes (FastAPI), consumers.
+
+## 2. Python Best Practices
+- **Version:** Python 3.10+
+- **File Size:** Keep code files short. **Strictly < 500 lines**. Refactor if larger.
+- **Type Hinting:** Strong typing is enforced.
+- **Package Manager:** Use **uv**.
+    - Install: `uv add <package>`
+    - Run: `uv run <command>`
+    - Sync: `uv sync`
+
+# Configuration & Data Rules
+## 1. Configuration Management
+- **Rule:** NEVER hardcode paths, secrets, or configurations.
+- **Loading:** Always load from environment variables or config files.
+- **Hierarchy:**
+    1. Environment Variables
+    2. `config/config_local.yaml` (Local overrides, gitignored)
+    3. `config/config.yaml` (Default production config)
+- **Format:** Prefer **YAML** over JSON for configuration files.
+
+## 2. Structured Data (Pydantic V2)
+- **Rule:** Always use **Pydantic V2** for:
+    - Parsing/Loading structured inputs.
+    - Defining Schemas/Entities.
+    - API Payloads.
+- **Validation:** Use Pydantic's validation to ensure data integrity at the system boundary.
+
+# Testing Strategy
+- **Framework:** `pytest`
+- **Unit Tests:**
+    - Must be fast and isolated.
+    - **MOCK** all external inputs/outputs.
+- **Integration Tests:**
+    - Required when a component depends on another component (Input/Output).
+    - These act as **Acceptance Criteria**.
+
+# Example: Context Loading
+When starting a task that requires specific libraries (e.g., pandas, numpy), progressively load them. Do not assume they are available unless defined in the Story requirements.
