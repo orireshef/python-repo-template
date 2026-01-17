@@ -21,8 +21,14 @@ Once you declare an active context (log directory), you are **locked** to it for
 
 **Active context file:** `logs/.active`
 - Read this file FIRST before reading any logs
-- Contains a single line: the path to the active log directory (e.g., `logs/my-story/` or `logs/`)
+- Contains a single line: the path to the active log directory
 - Update this file when switching context (with user approval)
+
+**Context values:**
+- `logs/` — root context (ad-hoc work, not tied to a story). Log files go directly in `logs/`.
+- `logs/<story_name>/` — story context. Log files go in that subdirectory.
+
+Root context (`logs/`) means you work with files in `logs/*.md`, NOT in subdirectories.
 
 **Session start flow:**
 1. Read `logs/.active` to know your context
