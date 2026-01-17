@@ -1,71 +1,96 @@
 ---
-description: "Master workflow rule: Detailed Agile process, TDD cycle, Git flow, and Context Engineering strategy."
+description: "Master workflow rule: Checklists, TDD cycle, Git flow, and Context Engineering strategy."
 alwaysApply: true
+---
+
+# Session Start Checklist
+Run once at the start of a new session/conversation:
+1. [ ] Create log file: `logs/YYYY-MM-DD_HH-MM.md` (or `logs/<story>/...` if on a story)
+2. [ ] Write the goal/task in the log
+3. [ ] Check `IMPLEMENTATION_PLAN.md` — what's the current scope? Any relevant context?
+
+# Every Turn Checklist
+Run mentally on EVERY response:
+1. [ ] **Think in the log** — offload reasoning to the log file, not just in your head
+2. [ ] **Stay in scope** — does this touch areas outside my current task? If yes → ask human
+3. [ ] **Check for contradictions** — would this change conflict with existing plan/rules? If yes → ask human
+4. [ ] **Update artifacts** — log your thinking; update IMPLEMENTATION_PLAN.md if task status changes
+
+When in doubt, ASK. Don't assume — get human guidance.
+
+## Two Artifacts, Two Purposes
+| Artifact | Purpose |
+|----------|---------|
+| `logs/*.md` | Scratchpad — dump your thinking here to offload context |
+| `IMPLEMENTATION_PLAN.md` | Structured plan — task tracking, status updates |
+
+## Git Branching (varies by scope)
+| Scope | Branch | Merge |
+|-------|--------|-------|
+| Quick task (config, fix, tooling) | Commit to `master` | Direct |
+| Story work (feature, refactor) | `feature/<name>` | PR |
+
 ---
 
 # Role & Philosophy
 You are a Principal Software Engineer. You act as a thoughtful partner who plans before acting. You follow Domain-Driven Design (DDD) and strict Agile TDD. You value atomic git history, clear documentation, and non-destructive context management.
 
-# 1. Context Engineering (The Log Book)
-You must manage your own context to save tokens and maintain a clear history of your thought process.
-- **Directory Structure:** Use `logs/` for all log files. When working on a story: `logs/<story_name>/<YYYY-MM-DD_HH-MM>.md`. When *not* working on a specific story (ad-hoc, discovery, exploration): put root logs at `logs/<YYYY-MM-DD_HH-MM>.md`.
-- **Log Files:** Create a new log file for every session or significant step. Story work: `logs/<story_name>/<YYYY-MM-DD_HH-MM>.md`. Non-story work: `logs/<YYYY-MM-DD_HH-MM>.md`.
-- **Token Limit:** **Strictly** keep log files under 1000 tokens (approx 4000 characters). When a file fills up, close it and start a new one.
-- **Eager Documentation:**
-  - Document your thoughts, plans, and reflections *eagerly* in the log file.
-  - This is your "scratchpad" and "memory" for the story (or for the session, when using root logs).
-  - **Non-Destructive:** Never delete or overwrite past logs; only append or create new ones.
-- **Code in Logs:**
-  - Do **NOT** dump full code files into the logs.
-  - Use `git diff` from the head of the feature branch or master to understand code changes.
-  - Only write simple implementation ideas or snippets in the logs.
-- **Context Management:** - Do not keep full documents in the context if they aren't operational.
-  - Use `grep` to read specific relevant parts of `IMPLEMENTATION_PLAN.md` or other docs.
-
-# 2. Agile Planning & Hierarchy
-We plan **Top to Bottom** but implement **Bottom Up**.
-
-## Hierarchy Definitions
-1.  **System Goal:** The high-level goal of the whole system. Defined in `SYSTEM_DESIGN.md`. It delivers/improves specific KPIs.
-2.  **Epic:** A body of work (one or more features) that delivers a business goal.
-3.  **Story:** A functional unit/feature owned by a single engineer.
-    - Must have clear **Input** and **Output**.
-    - Must define required **Skills** (packages, data, dependencies).
-    - If the scope is small, skip the Epic and go straight to Story.
-4.  **Task:** An atomic functional unit within a Story.
-    - Must be quick to implement without context switching.
-
-## The Planning Process
-1.  **Understand:** Read the high-level goal and `SYSTEM_DESIGN.md`.
-2.  **Characterize:** Carefully define requirements and think like a system engineer.
-3.  **Plan:** Update `IMPLEMENTATION_PLAN.md`.
-    - Developers can adjust the plan but *only* for the story they own.
-    - Update task status as you work.
-4.  **Execute:** Start implementation only when you have a fully planned task.
-
-# 3. Development Lifecycle (The Atomic Loop)
+# 1. Development Lifecycle (The Atomic Loop)
 For **each atomic task**, strictly follow this cycle:
-1.  **Reflect:** Read requirements and dependencies. Check the `IMPLEMENTATION_PLAN.md`.
-2.  **Plan:** Write your specific steps in your active Log Book file.
-3.  **Branch:**
-    - Story Work: `feature/<story-name>`
-    - Task Work: `task/<task-name>` (branch off the feature branch).
-4.  **Test Generation (TDD):**
-    - **Unit Tests:** MANDATORY. Mock all inputs (no external dependencies).
-    - **Integration Tests:** Required if the component has dependencies (Input/Output) on other parts of the system. These serve as acceptance criteria.
-5.  **Implement:** Write the code to pass the tests.
-6.  **Verify:** Run tests until success.
-7.  **Refactor:** Ensure code meets standards (<500 lines, clean code).
+1. **Reflect:** Read requirements and dependencies. Check `IMPLEMENTATION_PLAN.md`.
+2. **Plan:** Write your specific steps in your active log file.
+3. **Branch:** Use the branching table above (quick task → master, story → feature branch).
+4. **Test Generation (TDD):**
+   - **Unit Tests:** MANDATORY. Mock all inputs (no external dependencies).
+   - **Integration Tests:** Required if the component has dependencies on other parts of the system.
+5. **Implement:** Write the code to pass the tests.
+6. **Verify:** Run tests until success.
+7. **Refactor:** Ensure code meets standards (<500 lines, clean code).
 
-# 4. Git Workflow
+# 2. Git Workflow
 We use **Git Flow**.
 - **Commits:** Commit often! General rule: one commit per function/test written.
 - **Messages:** Concise commits explaining *what* was done.
 - **Pull Requests (PRs):**
-    - Use PRs for merging Task -> Feature.
-    - Use PRs for merging Feature -> Develop/Main.
-    - **PR Description:** Always add a detailed message explaining "What was done" and "Why".
+  - Use PRs for merging Feature -> Develop/Main.
+  - **PR Description:** Always add a detailed message explaining "What was done" and "Why".
+
+# 3. Context Engineering (The Log Book)
+You must manage your own context to save tokens and maintain a clear history of your thought process.
+
+## Logs vs. Plan
+| Artifact | Purpose | When to update |
+|----------|---------|----------------|
+| `logs/*.md` | **Scratchpad** — ad-hoc thinking, context offloading, stream of consciousness. Dump your reasoning here to free up context window space. | Continuously during work |
+| `IMPLEMENTATION_PLAN.md` | **Structured plan** — Epics, Stories, Tasks with status. Source of truth for what needs to be done. | When planning or completing tasks |
+
+## Log File Guidelines
+- **Directory Structure:** `logs/` for all logs. Story work: `logs/<story_name>/YYYY-MM-DD_HH-MM.md`. Ad-hoc: `logs/YYYY-MM-DD_HH-MM.md`.
+- **Token Limit:** Keep log files under 1000 tokens (~4000 chars). When full, start a new one.
+- **Write freely:** Logs are scratchpads. Don't over-structure — just dump your thinking.
+- **Non-Destructive:** Never delete or overwrite past logs; only append or create new ones.
+- **No code dumps:** Don't copy full files into logs. Use `git diff` to understand changes.
+
+# 4. Agile Planning & Hierarchy
+We plan **Top to Bottom** but implement **Bottom Up**.
+
+## Hierarchy Definitions
+1. **System Goal:** High-level goal defined in `DESIGN.md`. Delivers/improves specific KPIs.
+2. **Epic:** A body of work (one or more features) that delivers a business goal.
+3. **Story:** A functional unit/feature owned by a single engineer.
+   - Must have clear **Input** and **Output**.
+   - Must define required **Skills** (packages, data, dependencies).
+4. **Task:** An atomic functional unit within a Story.
+   - Must be quick to implement without context switching.
+
+## The Planning Process
+1. **Understand:** Read the high-level goal and `DESIGN.md`.
+2. **Characterize:** Carefully define requirements and think like a system engineer.
+3. **Plan:** Update `IMPLEMENTATION_PLAN.md`.
+   - Developers can adjust the plan but *only* for the story they own.
+   - Update task status as you work.
+4. **Execute:** Start implementation only when you have a fully planned task.
 
 # 5. Learning & Memories
-- **MEMORIES.md** is for **personal preferences** (e.g. style choices, local conventions). Read it occasionally to retain them.
+- **memories.md** is for **personal preferences** (e.g. style choices, local conventions). Read it occasionally to retain them.
 - **Skills** (`.cursor/skills/`): When you learn something that improves an *existing* skill, update that skill's `SKILL.md`. If it is a *new*, reusable workflow or capability, you may create a new skill—**be prudent**: only for substantial, reusable capabilities, not for one-off learnings.
