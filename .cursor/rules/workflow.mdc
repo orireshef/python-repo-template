@@ -9,14 +9,13 @@ Sessions are managed by hooks and the `/session` command:
 
 - **Start a session:** Run `/session <story-name>` or `/session root`
 - **Context is auto-injected:** The `sessionStart` hook loads `logs/.active` and recent logs
-- **Thinking is auto-captured:** The `afterAgentThought` hook writes your reasoning to log files
-- **Logs rotate automatically:** New file created when current exceeds ~4000 chars
 
 ## Starting Work
 
 1. Run `/session <story-name>` to work on a story, or `/session root` for ad-hoc work
 2. If picking up a new story (`planned` status), complete Story Planning first
 3. Context and recent logs are automatically injected — you don't need to read them manually
+4. Create/continue a log file in your active context directory
 
 ## Context Lock
 Once a session context is set, you are **locked** to it.
@@ -26,17 +25,25 @@ Once a session context is set, you are **locked** to it.
 
 # Every Turn Checklist
 Run mentally on EVERY response:
-1. [ ] **Stay in scope** — does this touch areas outside my current task? If yes → ask human
-2. [ ] **Check for contradictions** — would this change conflict with existing plan/rules? If yes → ask human
-3. [ ] **Update IMPLEMENTATION_PLAN.md** — when task status changes, update it (auto-syncs to master)
+1. [ ] **Log your thinking** — write important reasoning to the active log file (offload context)
+2. [ ] **Stay in scope** — does this touch areas outside my current task? If yes → ask human
+3. [ ] **Check for contradictions** — would this change conflict with existing plan/rules? If yes → ask human
+4. [ ] **Update IMPLEMENTATION_PLAN.md** — when task status changes, update it (auto-syncs to master)
 
 When in doubt, ASK. Don't assume — get human guidance.
 
 ## Two Artifacts, Two Purposes
 | Artifact | Purpose | How it's updated |
 |----------|---------|------------------|
-| `logs/*.md` | Scratchpad — your thinking process | **Automatic** via hooks |
+| `logs/*.md` | Scratchpad — your thinking process | **You write to it** |
 | `IMPLEMENTATION_PLAN.md` | Structured plan — task tracking | **You update it** |
+
+## Log File Guidelines
+- **Location:** `logs/` for root context, `logs/<story>/` for story context
+- **Naming:** `YYYY-MM-DD_HH-MM.md`
+- **Token limit:** Keep under ~4000 chars. When full, start a new file.
+- **Write freely:** Logs are scratchpads. Don't over-structure — just dump your thinking.
+- **No code dumps:** Don't copy full files into logs. Use `git diff` to understand changes.
 
 ## Git Branching (varies by scope)
 | Scope | Branch | Merge |
@@ -52,7 +59,7 @@ You are a Principal Software Engineer. You act as a thoughtful partner who plans
 # 1. Development Lifecycle (The Atomic Loop)
 For **each atomic task**, strictly follow this cycle:
 1. **Reflect:** Check `IMPLEMENTATION_PLAN.md` for requirements and current tasks.
-2. **Plan:** Think through your approach (auto-captured to logs).
+2. **Plan:** Think through your approach and log key decisions to your active log file.
 3. **Branch:** Use the branching table above (quick task → master, story → feature branch).
 4. **Test Generation (TDD):**
    - **Unit Tests:** MANDATORY. Mock all inputs (no external dependencies).
@@ -74,11 +81,11 @@ We use **Git Flow**.
 ## Logs vs. Plan
 | Artifact | Purpose | When to update |
 |----------|---------|----------------|
-| `logs/*.md` | **Scratchpad** — your thinking, auto-captured by hooks | Automatic |
+| `logs/*.md` | **Scratchpad** — your thinking process, context offloading | When you need to offload reasoning |
 | `IMPLEMENTATION_PLAN.md` | **Structured plan** — design, tests, tasks | When planning or completing tasks |
 
 ## What Goes Where
-- **Logs:** Your reasoning process (auto-captured — just think normally)
+- **Logs:** Your reasoning process — write key decisions, explorations, and thinking to offload context
 - **IMPLEMENTATION_PLAN.md:** Structured output — story design, test criteria, task breakdown
 
 # 4. Agile Planning & Hierarchy

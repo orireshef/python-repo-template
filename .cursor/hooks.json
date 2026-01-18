@@ -2,7 +2,6 @@
   "version": 1,
   "hooks": {
     "sessionStart": [{ "command": "./.cursor/hooks/session-start.sh" }],
-    "afterAgentThought": [{ "command": "./.cursor/hooks/thought-capture.sh" }],
     "afterFileEdit": [
       { "command": "./.cursor/hooks/format.sh" },
       { "command": "./.cursor/hooks/sync-plan.sh" }
