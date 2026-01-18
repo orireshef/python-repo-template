@@ -8,48 +8,46 @@ input=$(cat)
 workspace_root=$(echo "$input" | jq -r '.workspace_roots[0] // "."')
 cd "$workspace_root" 2>/dev/null || cd "$(dirname "$0")/../.."
 
-# Read current active context
-active_context=""
+# Read current active context from .active file
+context="root"
+active_files=""
 if [[ -f "logs/.active" ]]; then
-    active_context=$(cat "logs/.active" | tr -d '\n')
+    context=$(grep '^context:' logs/.active | sed 's/context: *//' | tr -d '\n')
+    active_files=$(grep '^  - ' logs/.active | sed 's/^  - //' | tr '\n' ', ' | sed 's/, $//')
+fi
+
+# Determine log directory
+if [[ "$context" == "root" ]]; then
+    log_dir="logs/"
+else
+    log_dir="logs/${context}/"
 fi
 
 # Read IMPLEMENTATION_PLAN.md to find first planned story
 suggested_story=""
-suggested_context=""
 if [[ -f "IMPLEMENTATION_PLAN.md" ]]; then
-    # Find first story with status "planned"
     suggested_story=$(grep -E '\|\s*S[0-9]+\s*\|.*\|\s*planned\s*\|' IMPLEMENTATION_PLAN.md | head -1 | sed 's/.*|\s*\(S[0-9]*\)\s*|.*/\1/')
-    if [[ -n "$suggested_story" ]]; then
-        # Extract story name for directory
-        story_name=$(grep -E "\|\s*$suggested_story\s*\|" IMPLEMENTATION_PLAN.md | sed 's/.*|\s*Story\s*|\s*\([^|]*\)\s*|.*/\1/' | tr ' ' '-' | tr '[:upper:]' '[:lower:]' | head -1)
-        suggested_context="logs/${story_name}/"
-    fi
 fi
 
 # Build context summary
 context_summary="## Session Context (auto-injected)\n\n"
-context_summary+="### Current Active Context\n"
-context_summary+="${active_context:-'(none set)'}\n\n"
+context_summary+="### Active Context\n"
+context_summary+="- **Context:** $context\n"
+context_summary+="- **Log directory:** $log_dir\n"
+if [[ -n "$active_files" ]]; then
+    context_summary+="- **Active files from last session:** $active_files\n"
+fi
+context_summary+="\n"
 
-if [[ -n "$suggested_story" ]]; then
-    context_summary+="### Suggested Story\n"
-    context_summary+="Story: $suggested_story\n"
-    context_summary+="Directory: $suggested_context\n\n"
+if [[ -n "$suggested_story" && "$context" == "root" ]]; then
+    context_summary+="### Available Story\n"
+    context_summary+="Story $suggested_story is available (status: planned). Run \`/session $suggested_story\` to pick it up.\n\n"
 fi
 
-# Read recent log if active context exists
-if [[ -n "$active_context" && -d "$active_context" ]]; then
-    recent_log=$(ls -t "$active_context"/*.md 2>/dev/null | head -1)
-    if [[ -n "$recent_log" ]]; then
-        context_summary+="### Recent Log ($recent_log)\n"
-        context_summary+="\`\`\`\n"
-        context_summary+="$(tail -30 "$recent_log" 2>/dev/null)\n"
-        context_summary+="\`\`\`\n\n"
-    fi
-elif [[ "$active_context" == "logs/" ]]; then
-    recent_log=$(ls -t logs/*.md 2>/dev/null | grep -v '.active' | head -1)
-    if [[ -n "$recent_log" ]]; then
+# Read recent log if exists
+if [[ -d "$log_dir" ]]; then
+    recent_log=$(ls -t "${log_dir}"*.md 2>/dev/null | head -1)
+    if [[ -n "$recent_log" && -f "$recent_log" ]]; then
         context_summary+="### Recent Log ($recent_log)\n"
         context_summary+="\`\`\`\n"
         context_summary+="$(tail -30 "$recent_log" 2>/dev/null)\n"
@@ -57,23 +55,31 @@ elif [[ "$active_context" == "logs/" ]]; then
     fi
 fi
 
-# Read IMPLEMENTATION_PLAN.md summary
+# Read relevant IMPLEMENTATION_PLAN.md section
 if [[ -f "IMPLEMENTATION_PLAN.md" ]]; then
-    context_summary+="### IMPLEMENTATION_PLAN.md Summary\n"
-    context_summary+="\`\`\`\n"
-    context_summary+="$(head -30 IMPLEMENTATION_PLAN.md)\n"
-    context_summary+="\`\`\`\n"
+    context_summary+="### IMPLEMENTATION_PLAN.md\n"
+    if [[ "$context" != "root" ]]; then
+        # For story context, show only that story's section
+        context_summary+="*Showing tasks for story: $context*\n"
+        context_summary+="\`\`\`\n"
+        context_summary+="$(grep -A 20 "| $context |\\|$context" IMPLEMENTATION_PLAN.md | head -25)\n"
+        context_summary+="\`\`\`\n"
+    else
+        context_summary+="\`\`\`\n"
+        context_summary+="$(head -30 IMPLEMENTATION_PLAN.md)\n"
+        context_summary+="\`\`\`\n"
+    fi
 fi
 
 # Build user message
-user_msg="Please confirm your session context.\n\n"
-if [[ -n "$suggested_story" ]]; then
-    user_msg+="Suggested: '$suggested_context' (Story $suggested_story)\n"
+user_msg="Session context: $context"
+if [[ "$context" == "root" ]]; then
+    user_msg+="\nRun /session <story-name> to work on a story, or continue with ad-hoc work."
+else
+    user_msg+="\nContinuing work on story: $context"
 fi
-user_msg+="Current: '${active_context:-logs/}'\n\n"
-user_msg+="Run: /session <story-name> or /session root"
 
-# Output JSON response - always prompt for confirmation
+# Output JSON response
 cat << EOF
 {
   "additional_context": "$(echo -e "$context_summary" | sed 's/"/\\"/g' | tr '\n' ' ' | sed 's/  */ /g')",

@@ -2,7 +2,9 @@
   "version": 1,
   "hooks": {
     "sessionStart": [{ "command": "./.cursor/hooks/session-start.sh" }],
+    "beforeReadFile": [{ "command": "./.cursor/hooks/file-guard.sh" }],
     "afterFileEdit": [
+      { "command": "./.cursor/hooks/track-files.sh" },
       { "command": "./.cursor/hooks/format.sh" },
       { "command": "./.cursor/hooks/sync-plan.sh" }
     ],

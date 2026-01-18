@@ -11,32 +11,35 @@ context_usage=$(echo "$input" | jq -r '.context_usage_percent // 0')
 workspace_root=$(echo "$input" | jq -r '.workspace_roots[0] // "."')
 cd "$workspace_root" 2>/dev/null || cd "$(dirname "$0")/../.."
 
-# Read active context
-active_context="logs/"
+# Read active context from .active file
+context="root"
 if [[ -f "logs/.active" ]]; then
-    active_context=$(cat "logs/.active" | tr -d '\n')
+    context=$(grep '^context:' logs/.active | sed 's/context: *//' | tr -d '\n')
 fi
 
-# Determine story name for /session command
-session_arg="root"
-if [[ "$active_context" != "logs/" ]]; then
-    session_arg=$(echo "$active_context" | sed 's|logs/||' | sed 's|/$||')
+# Determine log directory
+if [[ "$context" == "root" ]]; then
+    log_dir="logs/"
+    session_arg="root"
+else
+    log_dir="logs/${context}/"
+    session_arg="$context"
 fi
 
 # Append handoff entry to current log
 timestamp=$(date '+%Y-%m-%d %H:%M')
-if [[ "$active_context" == "logs/" ]]; then
-    recent_log=$(ls -t logs/*.md 2>/dev/null | grep -v '.active' | head -1)
-else
-    recent_log=$(ls -t "${active_context}"*.md 2>/dev/null | head -1)
-fi
+recent_log=$(ls -t "${log_dir}"*.md 2>/dev/null | head -1)
 
-if [[ -n "$recent_log" ]]; then
+if [[ -n "$recent_log" && -f "$recent_log" ]]; then
+    # Get active files from .active
+    active_files=$(grep '^  - ' logs/.active 2>/dev/null | sed 's/^  - //' | tr '\n' ', ' | sed 's/, $//')
+    
     cat >> "$recent_log" << EOF
 
 ## Session Handoff (context limit reached)
 - Context usage: ${context_usage}%
-- Active context: $active_context
+- Active context: $context
+- Active files: ${active_files:-none}
 - Timestamp: $timestamp
 
 Continue with: /session $session_arg

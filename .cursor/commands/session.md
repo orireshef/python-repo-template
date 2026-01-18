@@ -5,33 +5,45 @@ Start or continue a session with the specified context.
 **Usage:** `/session <story-name>` or `/session root`
 
 ## Input
-- `$ARGUMENTS` — Either a story name or "root"
+- `$ARGUMENTS` — Either a story name (e.g., `add-auth`) or `root`
 
 ## Instructions
 
-1. **Set active context:**
-   - If `$ARGUMENTS` is "root": set `logs/.active` to `logs/`
-   - Otherwise: set `logs/.active` to `logs/$ARGUMENTS/`
-   - Create the directory if it doesn't exist
+1. **Update `logs/.active`:**
+   ```yaml
+   context: $ARGUMENTS
+   files:
+   ```
+   - If `$ARGUMENTS` is a story name, create `logs/$ARGUMENTS/` directory if needed
 
 2. **Read context:**
-   - Read recent log files from the active directory (last 50 lines of most recent)
-   - Read IMPLEMENTATION_PLAN.md for current tasks
+   - If story context: use `grep` to read only your story from IMPLEMENTATION_PLAN.md
+   - Read recent log files from `logs/` (root) or `logs/$ARGUMENTS/` (story)
 
-3. **If story context (not root):**
+3. **If story context:**
    - Check story status in IMPLEMENTATION_PLAN.md
    - If `planned`: Mark as `assigned` and follow Story Planning instructions below
    - If `assigned` or `in-progress`: Show current tasks and continue work
 
-4. **Output session summary** with:
-   - Active context directory
-   - Recent log summary
-   - Current tasks from IMPLEMENTATION_PLAN.md
-   - Next steps
+4. **Output session summary**
+
+## Reading IMPLEMENTATION_PLAN.md (Story Context)
+
+When in a story context, only read/edit your story's section:
+
+```bash
+# Read your story's tasks
+grep -A 20 "| S1 |" IMPLEMENTATION_PLAN.md
+
+# Or find tasks for your story
+grep "| your-story-name |" IMPLEMENTATION_PLAN.md
+```
+
+This prevents accidentally modifying other agents' work.
 
 ## Story Planning (for newly assigned stories)
 
-If the story status was `planned` (now `assigned`), complete these planning steps before implementation:
+If the story status was `planned` (now `assigned`), complete these planning steps:
 
 1. **Design** — Add to IMPLEMENTATION_PLAN.md under this story:
    - Problem summary
@@ -39,7 +51,7 @@ If the story status was `planned` (now `assigned`), complete these planning step
    - Components/modules involved
    - Dependencies or risks
 
-2. **Define Tests** — Add test criteria to IMPLEMENTATION_PLAN.md:
+2. **Define Tests** — Add test criteria:
    - Integration tests (acceptance criteria)
    - Unit test coverage areas
 
@@ -47,5 +59,4 @@ If the story status was `planned` (now `assigned`), complete these planning step
    - Each task completable without context switching
    - Mark story as `in-progress` once tasks are defined
 
-Your thinking is automatically captured to logs via hooks — just think through the problem normally.
 Only start implementation after tasks are in IMPLEMENTATION_PLAN.md.

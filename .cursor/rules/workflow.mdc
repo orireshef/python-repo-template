@@ -5,22 +5,32 @@ alwaysApply: true
 
 # Session Management
 
-Sessions are managed by hooks and the `/session` command:
+Sessions are managed by hooks and the `/session` command.
 
-- **Start a session:** Run `/session <story-name>` or `/session root`
-- **Context is auto-injected:** The `sessionStart` hook loads `logs/.active` and recent logs
+## The `.active` File (Single Source of State)
+
+`logs/.active` is the **only stateful file** in the project. It tracks:
+```yaml
+context: root          # or story-name
+files:                 # project files touched this session
+  - src/module.py
+  - tests/test_module.py
+```
+
+- **context:** `root` for ad-hoc work, or a story name (e.g., `add-auth`)
+- **files:** automatically tracked when you edit project files
 
 ## Starting Work
 
-1. Run `/session <story-name>` to work on a story, or `/session root` for ad-hoc work
-2. If picking up a new story (`planned` status), complete Story Planning first
-3. Context and recent logs are automatically injected — you don't need to read them manually
-4. Create/continue a log file in your active context directory
+1. Run `/session <story-name>` or `/session root`
+2. Context and recent logs are auto-injected by the `sessionStart` hook
+3. If picking up a new story (`planned` status), complete Story Planning first
+4. Create/continue a log file in your context directory
 
 ## Context Lock
 Once a session context is set, you are **locked** to it.
+- **Hooks enforce this:** `beforeReadFile` guards log access to your context only
 - **NEVER switch context without user approval**
-- If the user asks for something outside your current context, ASK before switching
 - To switch: get approval, then run `/session <new-context>`
 
 # Every Turn Checklist
@@ -32,9 +42,10 @@ Run mentally on EVERY response:
 
 When in doubt, ASK. Don't assume — get human guidance.
 
-## Two Artifacts, Two Purposes
+## Three Artifacts
 | Artifact | Purpose | How it's updated |
 |----------|---------|------------------|
+| `logs/.active` | Session state (context, files) | **Hooks + /session command** |
 | `logs/*.md` | Scratchpad — your thinking process | **You write to it** |
 | `IMPLEMENTATION_PLAN.md` | Structured plan — task tracking | **You update it** |
 
@@ -44,6 +55,20 @@ When in doubt, ASK. Don't assume — get human guidance.
 - **Token limit:** Keep under ~4000 chars. When full, start a new file.
 - **Write freely:** Logs are scratchpads. Don't over-structure — just dump your thinking.
 - **No code dumps:** Don't copy full files into logs. Use `git diff` to understand changes.
+
+## Working with IMPLEMENTATION_PLAN.md (Story Context)
+
+When in a story context, **only read/edit your story's section** using grep:
+
+```bash
+# Read your story's info
+grep -A 5 "| S1 |" IMPLEMENTATION_PLAN.md
+
+# Find all tasks for your story
+grep "| S1 |" IMPLEMENTATION_PLAN.md
+```
+
+This prevents accidentally modifying other agents' work. The `sync-plan.sh` hook auto-commits changes to master.
 
 ## Git Branching (varies by scope)
 | Scope | Branch | Merge |
