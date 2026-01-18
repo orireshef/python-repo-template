@@ -1,3 +1,4 @@
 context: root
 log_file:
 files:
+  - README.md
