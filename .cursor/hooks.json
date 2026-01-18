@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "hooks": {
+    "sessionStart": [{ "command": "./.cursor/hooks/session-start.sh" }],
+    "afterAgentThought": [{ "command": "./.cursor/hooks/thought-capture.sh" }],
+    "afterFileEdit": [
+      { "command": "./.cursor/hooks/format.sh" },
+      { "command": "./.cursor/hooks/sync-plan.sh" }
+    ],
+    "beforeShellExecution": [{ "command": "./.cursor/hooks/git-guard.sh" }],
+    "preCompact": [{ "command": "./.cursor/hooks/context-warning.sh" }]
+  }
+}

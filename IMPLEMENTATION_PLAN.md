@@ -20,4 +20,9 @@ This document tracks Epics, Stories, and Tasks for the project.
 
 ---
 
-**Status Legend:** `planned` | `in-progress` | `blocked` | `done`
+**Status Legend:** 
+- `planned` — ready for pickup (available for assignment)
+- `assigned` — an agent has claimed this story and is planning
+- `in-progress` — actively being worked on (tasks defined)
+- `blocked` — waiting on something
+- `done` — completed

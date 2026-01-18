@@ -1,58 +1,42 @@
 ---
-description: "Master workflow rule: Checklists, TDD cycle, Git flow, and Context Engineering strategy."
+description: "Master workflow rule: Hook-assisted context management, TDD cycle, Git flow."
 alwaysApply: true
 ---
 
-# Session Start Checklist
-Run once at the start of a new session/conversation:
-1. [ ] **Read `logs/.active`** — this tells you the current context (log directory)
-2. [ ] **Read recent logs** from that directory — where did we leave off?
-3. [ ] Check `IMPLEMENTATION_PLAN.md` — what's the current scope? Any relevant context?
-4. [ ] Create/continue log file in the active directory: `YYYY-MM-DD_HH-MM.md`
-5. [ ] Write the goal/task in the log
+# Session Management
 
-If `logs/.active` doesn't exist or is empty, ask the user which context to work in.
+Sessions are managed by hooks and the `/session` command:
+
+- **Start a session:** Run `/session <story-name>` or `/session root`
+- **Context is auto-injected:** The `sessionStart` hook loads `logs/.active` and recent logs
+- **Thinking is auto-captured:** The `afterAgentThought` hook writes your reasoning to log files
+- **Logs rotate automatically:** New file created when current exceeds ~4000 chars
+
+## Starting Work
+
+1. Run `/session <story-name>` to work on a story, or `/session root` for ad-hoc work
+2. If picking up a new story (`planned` status), complete Story Planning first
+3. Context and recent logs are automatically injected — you don't need to read them manually
 
 ## Context Lock
-Once you declare an active context (log directory), you are **locked** to it for the session.
-- **NEVER switch log directories without explicit user approval**
+Once a session context is set, you are **locked** to it.
+- **NEVER switch context without user approval**
 - If the user asks for something outside your current context, ASK before switching
-- Switching context means: reading/writing logs in a different directory than declared
-
-**Active context file:** `logs/.active`
-- Read this file FIRST before reading any logs
-- Contains a single line: the path to the active log directory
-- Update this file when switching context (with user approval)
-
-**Context values:**
-- `logs/` — root context (ad-hoc work, not tied to a story). Log files go directly in `logs/`.
-- `logs/<story_name>/` — story context. Log files go in that subdirectory.
-
-Root context (`logs/`) means you work with files in `logs/*.md`, NOT in subdirectories.
-
-**Session start flow:**
-1. Read `logs/.active` to know your context
-2. Read recent logs from that directory
-3. Continue or create a new log file there
+- To switch: get approval, then run `/session <new-context>`
 
 # Every Turn Checklist
 Run mentally on EVERY response:
-1. [ ] **Check `logs/.active`** — am I working in the correct context? If mismatch → stop and clarify
-2. [ ] **Think in the log** — offload reasoning to the log file, not just in your head
-3. [ ] **Stay in scope** — does this touch areas outside my current task? If yes → ask human
-4. [ ] **Stay in context** — if task requires switching log directory → ask human first, then update `.active`
-5. [ ] **Check for contradictions** — would this change conflict with existing plan/rules? If yes → ask human
-6. [ ] **Update artifacts** — log your thinking; update IMPLEMENTATION_PLAN.md if task status changes
-
-**Soft reminder:** Periodically re-read your logs to remember where you are. You don't need to read every turn, but check when you feel lost or context is slipping.
+1. [ ] **Stay in scope** — does this touch areas outside my current task? If yes → ask human
+2. [ ] **Check for contradictions** — would this change conflict with existing plan/rules? If yes → ask human
+3. [ ] **Update IMPLEMENTATION_PLAN.md** — when task status changes, update it (auto-syncs to master)
 
 When in doubt, ASK. Don't assume — get human guidance.
 
 ## Two Artifacts, Two Purposes
-| Artifact | Purpose |
-|----------|---------|
-| `logs/*.md` | Scratchpad — dump your thinking here to offload context |
-| `IMPLEMENTATION_PLAN.md` | Structured plan — task tracking, status updates |
+| Artifact | Purpose | How it's updated |
+|----------|---------|------------------|
+| `logs/*.md` | Scratchpad — your thinking process | **Automatic** via hooks |
+| `IMPLEMENTATION_PLAN.md` | Structured plan — task tracking | **You update it** |
 
 ## Git Branching (varies by scope)
 | Scope | Branch | Merge |
@@ -67,8 +51,8 @@ You are a Principal Software Engineer. You act as a thoughtful partner who plans
 
 # 1. Development Lifecycle (The Atomic Loop)
 For **each atomic task**, strictly follow this cycle:
-1. **Reflect:** Read requirements and dependencies. Check `IMPLEMENTATION_PLAN.md`.
-2. **Plan:** Write your specific steps in your active log file.
+1. **Reflect:** Check `IMPLEMENTATION_PLAN.md` for requirements and current tasks.
+2. **Plan:** Think through your approach (auto-captured to logs).
 3. **Branch:** Use the branching table above (quick task → master, story → feature branch).
 4. **Test Generation (TDD):**
    - **Unit Tests:** MANDATORY. Mock all inputs (no external dependencies).
@@ -85,21 +69,17 @@ We use **Git Flow**.
   - Use PRs for merging Feature -> Develop/Main.
   - **PR Description:** Always add a detailed message explaining "What was done" and "Why".
 
-# 3. Context Engineering (The Log Book)
-You must manage your own context to save tokens and maintain a clear history of your thought process.
+# 3. Context Engineering
 
 ## Logs vs. Plan
 | Artifact | Purpose | When to update |
 |----------|---------|----------------|
-| `logs/*.md` | **Scratchpad** — ad-hoc thinking, context offloading, stream of consciousness. Dump your reasoning here to free up context window space. | Continuously during work |
-| `IMPLEMENTATION_PLAN.md` | **Structured plan** — Epics, Stories, Tasks with status. Source of truth for what needs to be done. | When planning or completing tasks |
+| `logs/*.md` | **Scratchpad** — your thinking, auto-captured by hooks | Automatic |
+| `IMPLEMENTATION_PLAN.md` | **Structured plan** — design, tests, tasks | When planning or completing tasks |
 
-## Log File Guidelines
-- **Directory Structure:** `logs/` for all logs. Story work: `logs/<story_name>/YYYY-MM-DD_HH-MM.md`. Ad-hoc: `logs/YYYY-MM-DD_HH-MM.md`.
-- **Token Limit:** Keep log files under 1000 tokens (~4000 chars). When full, start a new one.
-- **Write freely:** Logs are scratchpads. Don't over-structure — just dump your thinking.
-- **Non-Destructive:** Never delete or overwrite past logs; only append or create new ones.
-- **No code dumps:** Don't copy full files into logs. Use `git diff` to understand changes.
+## What Goes Where
+- **Logs:** Your reasoning process (auto-captured — just think normally)
+- **IMPLEMENTATION_PLAN.md:** Structured output — story design, test criteria, task breakdown
 
 # 4. Agile Planning & Hierarchy
 We plan **Top to Bottom** but implement **Bottom Up**.
@@ -113,12 +93,18 @@ We plan **Top to Bottom** but implement **Bottom Up**.
 4. **Task:** An atomic functional unit within a Story.
    - Must be quick to implement without context switching.
 
+## Story Planning (when picking up a new story)
+Before implementation, update IMPLEMENTATION_PLAN.md with:
+1. **Design** — Problem summary, inputs/outputs, components, dependencies
+2. **Tests** — Integration tests (acceptance criteria), unit test areas
+3. **Tasks** — Atomic tasks, each completable without context switching
+
+Mark story as `in-progress` once planning is complete.
+
 ## The Planning Process
 1. **Understand:** Read the high-level goal and `DESIGN.md`.
 2. **Characterize:** Carefully define requirements and think like a system engineer.
-3. **Plan:** Update `IMPLEMENTATION_PLAN.md`.
-   - Developers can adjust the plan but *only* for the story they own.
-   - Update task status as you work.
+3. **Plan:** Update `IMPLEMENTATION_PLAN.md` (auto-syncs to master via hooks).
 4. **Execute:** Start implementation only when you have a fully planned task.
 
 # 5. Learning & Memories
