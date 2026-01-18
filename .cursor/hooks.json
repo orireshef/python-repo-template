@@ -5,7 +5,8 @@
     "afterFileEdit": [
       { "command": "./.cursor/hooks/track-files.sh" },
       { "command": "./.cursor/hooks/format.sh" },
-      { "command": "./.cursor/hooks/sync-plan.sh" }
+      { "command": "./.cursor/hooks/sync-plan.sh" },
+      { "command": "./.cursor/hooks/plan-guard.sh" }
     ],
     "beforeShellExecution": [{ "command": "./.cursor/hooks/git-guard.sh" }],
     "stop": [{ "command": "./.cursor/hooks/session-end.sh" }]
