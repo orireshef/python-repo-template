@@ -8,6 +8,11 @@ This document tracks Epics, Stories, and Tasks for the project.
 | ID | Type | Name | Status | Owner | Notes |
 |----|------|------|--------|-------|-------|
 | S1 | Story | Improve workflow rules for agent compliance | done | agent | Added checklists, reordered sections |
+| S2 | Story | Implement IFileHandler base + NumpyHandler | planned | - | Abstract base with serialize/deserialize/to_file/from_file |
+| S3 | Story | Implement JsonHandler | planned | - | JSON serialization with metadata envelope, error handling |
+| S4 | Story | Implement FileHandlerFactory | planned | - | Type detection, handler registration |
+| S5 | Story | Implement IFileSystem + LocalFileSystem | planned | - | Abstract interface + local impl with collision detection |
+| S6 | Story | Integration tests and documentation | planned | - | Full test suite, docstrings |
 
 ## Task Backlog
 
