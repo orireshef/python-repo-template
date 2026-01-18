@@ -49,6 +49,7 @@ Some protections are enforced by hooks, others require manual discipline:
 
 | Protection | Hook | Backup (if no hook) |
 |------------|------|---------------------|
+| **Block prompts if no .active** | `beforeSubmitPrompt` ✅ | Requires `/session` first |
 | Log access to your context only | `beforeReadFile` ✅ | — |
 | Track files edited | `afterFileEdit` ✅ | — |
 | Format Python files | `afterFileEdit` ✅ | — |
@@ -56,7 +57,6 @@ Some protections are enforced by hooks, others require manual discipline:
 | **Revert edits to others' stories** | `afterFileEdit` ✅ | sync-plan.sh detects & reverts |
 | Block dangerous git | `beforeShellExecution` ✅ | — |
 | Log session end | `stop` ✅ | — |
-| **Context injection at start** | ❌ | Run `/session` command manually |
 | **Pull plan from master** | ❌ | `/session` overwrites with master |
 | **Save state before compaction** | ❌ | **Log frequently throughout session** |
 
