@@ -42,12 +42,16 @@ Run mentally on EVERY response:
 
 When in doubt, ASK. Don't assume — get human guidance.
 
-## Three Artifacts
+## Stateful Artifacts
+
+| Artifact | Scope | Purpose | How it's updated |
+|----------|-------|---------|------------------|
+| `logs/.active` | **This agent** | Session state (context, files) | Hooks + `/session` command |
+| `IMPLEMENTATION_PLAN.md` | **All agents** | Cross-agent source of truth for tasks | You update it (auto-syncs to master) |
+
 | Artifact | Purpose | How it's updated |
 |----------|---------|------------------|
-| `logs/.active` | Session state (context, files) | **Hooks + /session command** |
 | `logs/*.md` | Scratchpad — your thinking process | **You write to it** |
-| `IMPLEMENTATION_PLAN.md` | Structured plan — task tracking | **You update it** |
 
 ## Log File Guidelines
 - **Location:** `logs/` for root context, `logs/<story>/` for story context
