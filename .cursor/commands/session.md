@@ -20,9 +20,12 @@ Start or continue a session with the specified context.
 2. **Update `logs/.active`:**
    ```yaml
    context: $ARGUMENTS
+   log_file: logs/<new-log-filename>.md
    files:
    ```
    - If `$ARGUMENTS` is a story name, create `logs/$ARGUMENTS/` directory if needed
+   - Create a new log file with timestamp: `logs/YYYY-MM-DD_HH-MM.md` (root) or `logs/$ARGUMENTS/YYYY-MM-DD_HH-MM.md` (story)
+   - Set `log_file` to the new log file path
 
 3. **Read context:**
    - If story context: use `grep` to read only your story from IMPLEMENTATION_PLAN.md

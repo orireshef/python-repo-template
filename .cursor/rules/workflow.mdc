@@ -11,13 +11,15 @@ Sessions are managed by hooks and the `/session` command.
 
 `logs/.active` is the **only stateful file** in the project. It tracks:
 ```yaml
-context: root          # or story-name
-files:                 # project files touched this session
+context: root                    # or story-name
+log_file: logs/2026-01-17_12-00.md  # current active log file
+files:                           # project files touched this session
   - src/module.py
   - tests/test_module.py
 ```
 
 - **context:** `root` for ad-hoc work, or a story name (e.g., `add-auth`)
+- **log_file:** current log file (auto-rotated when > 4000 chars)
 - **files:** automatically tracked when you edit project files
 
 ## Starting Work
@@ -55,6 +57,7 @@ Some protections are enforced by hooks, others require manual discipline:
 | Format Python files | `afterFileEdit` ✅ | — |
 | Sync plan to master | `afterFileEdit` ✅ | — |
 | **Revert edits to others' stories** | `afterFileEdit` ✅ | sync-plan.sh detects & reverts |
+| **Auto-rotate log files** | `afterFileEdit` ✅ | log-rotate.sh creates new file, updates .active |
 | Block dangerous git | `beforeShellExecution` ✅ | — |
 | Log session end | `stop` ✅ | — |
 | **Pull plan from master** | ❌ | `/session` overwrites with master |
