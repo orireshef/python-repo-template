@@ -105,10 +105,10 @@ class TestFileHandlerFactoryHandlerCaching:
         factory = FileHandlerFactory()
         handler1 = factory.get_handler_for_object(np.array([1]))
         handler2 = factory.get_handler_for_object(np.array([2, 3]))
-        assert type(handler1) == type(handler2)
+        assert type(handler1) is type(handler2)
 
     def test_same_handler_type_for_same_extension(self):
         factory = FileHandlerFactory()
         handler1 = factory.get_handler_for_file(Path("a.npy"))
         handler2 = factory.get_handler_for_file(Path("b.npy"))
-        assert type(handler1) == type(handler2)
+        assert type(handler1) is type(handler2)
