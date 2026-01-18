@@ -35,12 +35,35 @@ Once a session context is set, you are **locked** to it.
 
 # Every Turn Checklist
 Run mentally on EVERY response:
-1. [ ] **Log your thinking** — write important reasoning to the active log file (offload context)
-2. [ ] **Stay in scope** — does this touch areas outside my current task? If yes → ask human
-3. [ ] **Check for contradictions** — would this change conflict with existing plan/rules? If yes → ask human
-4. [ ] **Update IMPLEMENTATION_PLAN.md** — when task status changes, update it (auto-syncs to master)
+1. [ ] **Check context** — read `logs/.active` to confirm your context (root or story-name)
+2. [ ] **Log your thinking** — write important reasoning to the active log file (offload context)
+3. [ ] **Stay in scope** — does this touch areas outside my current task? If yes → ask human
+4. [ ] **Check plan ownership** — before editing IMPLEMENTATION_PLAN.md, verify the story is yours or unassigned
+5. [ ] **Update IMPLEMENTATION_PLAN.md** — when task status changes, update it (auto-syncs to master)
 
 When in doubt, ASK. Don't assume — get human guidance.
+
+## Hook Coverage & Manual Backups
+
+Some protections are enforced by hooks, others require manual discipline:
+
+| Protection | Hook | Backup (if no hook) |
+|------------|------|---------------------|
+| Log access to your context only | `beforeReadFile` ✅ | — |
+| Track files edited | `afterFileEdit` ✅ | — |
+| Format Python files | `afterFileEdit` ✅ | — |
+| Sync plan to master | `afterFileEdit` ✅ | — |
+| Block dangerous git | `beforeShellExecution` ✅ | — |
+| Log session end | `stop` ✅ | — |
+| **Context injection at start** | ❌ | Run `/session` command manually |
+| **Pull plan from master** | ❌ | `/session` runs git fetch |
+| **Block edits to others' stories** | ❌ | **Check ownership before editing** |
+| **Save state before compaction** | ❌ | **Log frequently throughout session** |
+
+**Critical manual requirements:**
+- Always run `/session` at the start of work
+- Check story ownership before editing IMPLEMENTATION_PLAN.md
+- Log your thinking frequently (context can be compacted without warning)
 
 ## Stateful Artifacts
 
@@ -84,7 +107,12 @@ grep "your-story-name" IMPLEMENTATION_PLAN.md
 - Add new stories (status: `planned`)
 - Modify stories with status `planned` (not yet assigned)
 - Read any section
-- **Assigned/in-progress stories require user permission** — `plan-guard.sh` will ask
+- **Assigned/in-progress stories require user permission** — ASK before modifying
+
+**Before ANY edit to IMPLEMENTATION_PLAN.md:**
+1. Check `logs/.active` for your context
+2. If story context: only edit your story's section
+3. If root context: only edit unassigned stories, or ask permission
 
 **Sync behavior:**
 - `/session` command pulls IMPLEMENTATION_PLAN.md from master
