@@ -2,3 +2,23 @@ context: root
 log_file:
 files:
   - README.md
+  - /Users/orireshef/.cursor/plans/files_api_design_8efc54bd.plan.md
+  - pyproject.toml
+  - DESIGN.md
+  - IMPLEMENTATION_PLAN.md
+  - src/files_api/files/__init__.py
+  - src/files_api/files/handlers/__init__.py
+  - src/files_api/__init__.py
+  - src/files_api/files/exceptions.py
+  - src/files_api/files/handlers/base.py
+  - src/files_api/files/handlers/numpy_handler.py
+  - tests/files/__init__.py
+  - tests/files/test_numpy_handler.py
+  - src/files_api/files/interface.py
+  - src/files_api/files/local.py
+  - src/files_api/files/handlers/json_handler.py
+  - tests/files/test_json_handler.py
+  - tests/files/test_factory.py
+  - src/files_api/files/factory.py
+  - tests/files/test_local_filesystem.py
+  - tests/files/test_integration.py
