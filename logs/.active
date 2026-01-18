@@ -1,2 +1,5 @@
 context: root
 files:
+  - .cursor/rules/workflow.mdc
+  - .cursor/commands/session.md
+  - logs/2026-01-17_12-00.md

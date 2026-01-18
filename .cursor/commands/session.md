@@ -9,23 +9,28 @@ Start or continue a session with the specified context.
 
 ## Instructions
 
-1. **Update `logs/.active`:**
+1. **Sync IMPLEMENTATION_PLAN.md from master:**
+   ```bash
+   git fetch origin master && git checkout origin/master -- IMPLEMENTATION_PLAN.md
+   ```
+
+2. **Update `logs/.active`:**
    ```yaml
    context: $ARGUMENTS
    files:
    ```
    - If `$ARGUMENTS` is a story name, create `logs/$ARGUMENTS/` directory if needed
 
-2. **Read context:**
+3. **Read context:**
    - If story context: use `grep` to read only your story from IMPLEMENTATION_PLAN.md
    - Read recent log files from `logs/` (root) or `logs/$ARGUMENTS/` (story)
 
-3. **If story context:**
+4. **If story context:**
    - Check story status in IMPLEMENTATION_PLAN.md
    - If `planned`: Mark as `assigned` and follow Story Planning instructions below
    - If `assigned` or `in-progress`: Show current tasks and continue work
 
-4. **Output session summary**
+5. **Output session summary**
 
 ## Reading IMPLEMENTATION_PLAN.md (Story Context)
 

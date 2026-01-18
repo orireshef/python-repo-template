@@ -22,8 +22,8 @@ files:                 # project files touched this session
 
 ## Starting Work
 
-1. Run `/session <story-name>` or `/session root`
-2. Context and recent logs are auto-injected by the `sessionStart` hook
+1. Run `/session <story-name>` or `/session root` to set your context
+2. Read recent logs from your context directory to understand where you left off
 3. If picking up a new story (`planned` status), complete Story Planning first
 4. Create/continue a log file in your context directory
 
@@ -87,8 +87,9 @@ grep "your-story-name" IMPLEMENTATION_PLAN.md
 - **Assigned/in-progress stories require user permission** — `plan-guard.sh` will ask
 
 **Sync behavior:**
-- `session-start.sh` pulls IMPLEMENTATION_PLAN.md from master at session start
-- `sync-plan.sh` commits and pushes changes to master after edits
+- `/session` command pulls IMPLEMENTATION_PLAN.md from master
+- `sync-plan.sh` (afterFileEdit hook) commits and pushes changes to master
+- `session-end.sh` (stop hook) logs session end to current log file
 
 ## Git Branching (varies by scope)
 | Scope | Branch | Merge |
