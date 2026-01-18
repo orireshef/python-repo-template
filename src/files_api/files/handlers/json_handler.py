@@ -1,11 +1,13 @@
 """Handler for JSON-serializable objects (.json files)."""
 
 import json
-from pathlib import Path
-from typing import Any
+import logging
+from typing import IO, Any
 
 from files_api.files.exceptions import DeserializationError, SerializationError
 from files_api.files.handlers.base import IFileHandler
+
+logger = logging.getLogger(__name__)
 
 # Current envelope version
 ENVELOPE_VERSION = 1
@@ -16,38 +18,47 @@ class JsonHandler(IFileHandler):
 
     Saves objects as .json files with a metadata envelope containing
     type information for future extensibility.
+    Works with any file-like object (local files, S3 via s3fs, etc.).
     """
 
     extension: str = ".json"
     type_name: str = "json"
 
-    def serialize(self, obj: Any) -> bytes:
-        """Convert object to bytes with metadata envelope.
+    def to_file(self, obj: Any, file_obj: IO[bytes]) -> None:
+        """Write object to a file-like object as JSON.
 
         Args:
             obj: A JSON-serializable object.
-
-        Returns:
-            The serialized bytes in JSON format with envelope.
+            file_obj: A file-like object opened in binary write mode.
 
         Raises:
             SerializationError: If the object cannot be serialized.
         """
+        obj_type = type(obj).__name__
+        logger.debug(
+            "Writing JSON object (type=%s) with envelope version %d",
+            obj_type,
+            ENVELOPE_VERSION,
+        )
+
         envelope = {
-            "__type__": type(obj).__name__,
+            "__type__": obj_type,
             "__version__": ENVELOPE_VERSION,
             "data": obj,
         }
         try:
-            return json.dumps(envelope, ensure_ascii=False).encode("utf-8")
+            data = json.dumps(envelope, ensure_ascii=False).encode("utf-8")
+            file_obj.write(data)
+            logger.info("Wrote JSON object (type=%s, %d bytes)", obj_type, len(data))
         except TypeError as e:
+            logger.error("Failed to serialize object of type %s: %s", obj_type, e)
             raise SerializationError(obj, str(e)) from e
 
-    def deserialize(self, data: bytes) -> Any:
-        """Convert bytes to object, unwrapping metadata envelope.
+    def from_file(self, file_obj: IO[bytes]) -> Any:
+        """Read object from a file-like object as JSON.
 
         Args:
-            data: The bytes in JSON format with envelope.
+            file_obj: A file-like object opened in binary read mode.
 
         Returns:
             The deserialized object (the 'data' field from envelope).
@@ -55,44 +66,19 @@ class JsonHandler(IFileHandler):
         Raises:
             DeserializationError: If the data cannot be deserialized.
         """
+        logger.debug("Reading JSON object from file")
         try:
+            data = file_obj.read()
             envelope = json.loads(data.decode("utf-8"))
         except (json.JSONDecodeError, UnicodeDecodeError) as e:
+            logger.error("Failed to parse JSON: %s", e)
             raise DeserializationError(str(e)) from e
 
         if not isinstance(envelope, dict) or "data" not in envelope:
+            logger.error("Invalid envelope structure: missing 'data' field")
             raise DeserializationError("Invalid envelope: missing 'data' field")
 
+        obj_type = envelope.get("__type__", "unknown")
+        version = envelope.get("__version__", "unknown")
+        logger.info("Read JSON object (type=%s, version=%s)", obj_type, version)
         return envelope["data"]
-
-    def to_file(self, obj: Any, path: Path) -> None:
-        """Write object directly to file.
-
-        Args:
-            obj: A JSON-serializable object.
-            path: The file path to write to.
-
-        Raises:
-            SerializationError: If the object cannot be serialized.
-        """
-        data = self.serialize(obj)
-        path.write_bytes(data)
-
-    def from_file(self, path: Path) -> Any:
-        """Read object directly from file.
-
-        Args:
-            path: The file path to read from.
-
-        Returns:
-            The deserialized object.
-
-        Raises:
-            DeserializationError: If the file cannot be deserialized.
-        """
-        try:
-            data = path.read_bytes()
-        except OSError as e:
-            raise DeserializationError(str(e)) from e
-
-        return self.deserialize(data)

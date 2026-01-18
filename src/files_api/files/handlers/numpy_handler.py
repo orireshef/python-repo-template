@@ -1,89 +1,65 @@
-"""Handler for numpy objects (.npy files)."""
+"""Handler for numpy arrays (.npy files)."""
 
-from io import BytesIO
-from pathlib import Path
-from typing import Any
+import logging
+from typing import IO, Any
 
 import numpy as np
 
 from files_api.files.exceptions import DeserializationError, SerializationError
 from files_api.files.handlers.base import IFileHandler
 
+logger = logging.getLogger(__name__)
+
 
 class NumpyHandler(IFileHandler):
-    """Handler for numpy arrays and objects with dtype attribute.
+    """Handler for numpy arrays.
 
-    Saves objects as .npy files using numpy's native format.
+    Saves arrays as .npy files using numpy's native format.
+    Works with any file-like object (local files, S3 via s3fs, etc.).
     """
 
     extension: str = ".npy"
     type_name: str = "numpy"
 
-    def serialize(self, obj: Any) -> bytes:
-        """Convert numpy object to bytes.
+    def to_file(self, obj: Any, file_obj: IO[bytes]) -> None:
+        """Write numpy array to a file-like object.
 
         Args:
-            obj: A numpy array or object with dtype attribute.
-
-        Returns:
-            The serialized bytes in .npy format.
+            obj: A numpy ndarray.
+            file_obj: A file-like object opened in binary write mode.
 
         Raises:
-            SerializationError: If the object cannot be serialized.
+            SerializationError: If the array cannot be written.
         """
+        logger.debug(
+            "Writing numpy array (shape=%s, dtype=%s) to file",
+            obj.shape,
+            obj.dtype,
+        )
         try:
-            buffer = BytesIO()
-            np.save(buffer, obj, allow_pickle=True)
-            return buffer.getvalue()
+            np.save(file_obj, obj, allow_pickle=True)
+            logger.info("Wrote numpy array (shape=%s, dtype=%s)", obj.shape, obj.dtype)
         except Exception as e:  # pragma: no cover
+            logger.error("Failed to write numpy array: %s", e)
             raise SerializationError(obj, str(e)) from e
 
-    def deserialize(self, data: bytes) -> Any:
-        """Convert bytes to numpy object.
+    def from_file(self, file_obj: IO[bytes]) -> Any:
+        """Read numpy array from a file-like object.
 
         Args:
-            data: The bytes in .npy format.
+            file_obj: A file-like object opened in binary read mode.
 
         Returns:
-            The deserialized numpy object.
+            The numpy array.
 
         Raises:
-            DeserializationError: If the data cannot be deserialized.
+            DeserializationError: If the array cannot be read.
         """
+        logger.debug("Reading numpy array from file")
         try:
-            buffer = BytesIO(data)
-            return np.load(buffer, allow_pickle=True)
+            result = np.load(file_obj, allow_pickle=True)
+            logger.info("Read numpy array (shape=%s, dtype=%s)", result.shape, result.dtype)
+            return result
         except Exception as e:
-            raise DeserializationError(str(e)) from e
-
-    def to_file(self, obj: Any, path: Path) -> None:
-        """Write numpy object directly to file.
-
-        Args:
-            obj: A numpy array or object with dtype attribute.
-            path: The file path to write to.
-
-        Raises:
-            SerializationError: If the object cannot be serialized.
-        """
-        try:
-            np.save(path, obj, allow_pickle=True)
-        except Exception as e:  # pragma: no cover
-            raise SerializationError(obj, str(e)) from e
-
-    def from_file(self, path: Path) -> Any:
-        """Read numpy object directly from file.
-
-        Args:
-            path: The file path to read from.
-
-        Returns:
-            The deserialized numpy object.
-
-        Raises:
-            DeserializationError: If the file cannot be deserialized.
-        """
-        try:
-            return np.load(path, allow_pickle=True)
-        except Exception as e:
+            logger.error("Failed to read numpy array: %s", e)
             raise DeserializationError(str(e)) from e

@@ -1,5 +1,6 @@
 """Factory for selecting appropriate file handlers."""
 
+import logging
 from pathlib import Path
 from typing import Any
 
@@ -8,6 +9,8 @@ import numpy as np
 from files_api.files.handlers.base import IFileHandler
 from files_api.files.handlers.json_handler import JsonHandler
 from files_api.files.handlers.numpy_handler import NumpyHandler
+
+logger = logging.getLogger(__name__)
 
 
 class FileHandlerFactory:
@@ -42,9 +45,15 @@ class FileHandlerFactory:
         """
         # Only numpy ndarrays use NumpyHandler
         if isinstance(obj, np.ndarray):
+            logger.debug(
+                "Selected NumpyHandler for ndarray (shape=%s, dtype=%s)",
+                obj.shape,
+                obj.dtype,
+            )
             return self._numpy_handler
 
         # Fallback to JSON for everything else
+        logger.debug("Selected JsonHandler for type %s", type(obj).__name__)
         return self._json_handler
 
     def get_handler_for_file(self, path: Path) -> IFileHandler:
@@ -61,5 +70,8 @@ class FileHandlerFactory:
         """
         suffix = path.suffix.lower()
         if suffix not in self._extension_map:
+            logger.error("Unknown file extension %r for path %s", suffix, path)
             raise ValueError(f"Unknown file extension: '{suffix}'")
-        return self._extension_map[suffix]
+        handler = self._extension_map[suffix]
+        logger.debug("Selected %s handler for extension %r", handler.type_name, suffix)
+        return handler

@@ -1,14 +1,15 @@
 """Abstract base class for file systems."""
 
 from abc import ABC, abstractmethod
-from typing import Any
+from typing import IO, Any
 
 
 class IFileSystem(ABC):
     """Abstract base class for file system implementations.
 
     Defines the interface for saving, retrieving, counting, and checking
-    existence of objects in a storage backend.
+    existence of objects in a storage backend. Concrete implementations
+    provide storage-specific logic via the _open() method.
     """
 
     @abstractmethod
@@ -62,5 +63,25 @@ class IFileSystem(ABC):
 
         Returns:
             True if the key exists, False otherwise.
+        """
+        ...
+
+    @abstractmethod
+    def _open(self, key: str, mode: str) -> IO[bytes]:
+        """Open a file-like object for the given key.
+
+        This is the abstract method that concrete implementations must provide.
+        It returns a file-like object that handlers can write to or read from.
+
+        Args:
+            key: The full key including extension (e.g., "data.npy").
+            mode: The file mode ("rb" for read, "wb" for write).
+
+        Returns:
+            A file-like object (IO[bytes]).
+
+        Note:
+            For LocalFileSystem, this opens a local file.
+            For S3FileSystem, this would return an s3fs file object.
         """
         ...

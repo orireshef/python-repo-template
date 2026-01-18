@@ -1,6 +1,7 @@
 """Tests for NumpyHandler."""
 
 import tempfile
+from io import BytesIO
 from pathlib import Path
 
 import numpy as np
@@ -22,114 +23,113 @@ class TestNumpyHandlerAttributes:
         assert handler.type_name == "numpy"
 
 
-class TestNumpyHandlerSerialize:
-    """Test serialize method."""
+class TestNumpyHandlerToFile:
+    """Test to_file method with file-like objects."""
 
-    def test_serialize_1d_array(self):
+    def test_to_file_1d_array(self):
         handler = NumpyHandler()
         arr = np.array([1, 2, 3])
-        result = handler.serialize(arr)
-        assert isinstance(result, bytes)
-        assert len(result) > 0
+        buffer = BytesIO()
+        handler.to_file(arr, buffer)
+        assert buffer.tell() > 0  # Data was written
 
-    def test_serialize_2d_array(self):
+    def test_to_file_2d_array(self):
         handler = NumpyHandler()
         arr = np.array([[1, 2], [3, 4]])
-        result = handler.serialize(arr)
-        assert isinstance(result, bytes)
+        buffer = BytesIO()
+        handler.to_file(arr, buffer)
+        assert buffer.tell() > 0
 
-    def test_serialize_nd_array(self):
+    def test_to_file_nd_array(self):
         handler = NumpyHandler()
         arr = np.zeros((2, 3, 4, 5))
-        result = handler.serialize(arr)
-        assert isinstance(result, bytes)
+        buffer = BytesIO()
+        handler.to_file(arr, buffer)
+        assert buffer.tell() > 0
 
-    def test_serialize_different_dtypes(self):
+    def test_to_file_different_dtypes(self):
         handler = NumpyHandler()
         for dtype in [np.float64, np.int32, np.bool_, np.complex128]:
             arr = np.array([1, 2, 3], dtype=dtype)
-            result = handler.serialize(arr)
-            assert isinstance(result, bytes)
+            buffer = BytesIO()
+            handler.to_file(arr, buffer)
+            assert buffer.tell() > 0
 
-    def test_serialize_empty_array(self):
+    def test_to_file_empty_array(self):
         handler = NumpyHandler()
         arr = np.array([])
-        result = handler.serialize(arr)
-        assert isinstance(result, bytes)
+        buffer = BytesIO()
+        handler.to_file(arr, buffer)
+        assert buffer.tell() > 0
 
-
-class TestNumpyHandlerDeserialize:
-    """Test deserialize method."""
-
-    def test_deserialize_roundtrip_1d(self):
-        handler = NumpyHandler()
-        arr = np.array([1.0, 2.0, 3.0])
-        data = handler.serialize(arr)
-        result = handler.deserialize(data)
-        np.testing.assert_array_equal(result, arr)
-
-    def test_deserialize_roundtrip_2d(self):
-        handler = NumpyHandler()
-        arr = np.array([[1, 2], [3, 4]])
-        data = handler.serialize(arr)
-        result = handler.deserialize(data)
-        np.testing.assert_array_equal(result, arr)
-
-    def test_deserialize_preserves_dtype(self):
-        handler = NumpyHandler()
-        arr = np.array([1, 2, 3], dtype=np.int32)
-        data = handler.serialize(arr)
-        result = handler.deserialize(data)
-        assert result.dtype == np.int32
-
-    def test_deserialize_invalid_data_raises_error(self):
-        handler = NumpyHandler()
-        with pytest.raises(DeserializationError):
-            handler.deserialize(b"not valid npy data")
-
-
-class TestNumpyHandlerToFile:
-    """Test to_file method."""
-
-    def test_to_file_creates_file(self):
+    def test_to_file_with_real_file(self):
         handler = NumpyHandler()
         arr = np.array([1, 2, 3])
         with tempfile.TemporaryDirectory() as tmpdir:
             path = Path(tmpdir) / "test.npy"
-            handler.to_file(arr, path)
+            with open(path, "wb") as f:
+                handler.to_file(arr, f)
             assert path.exists()
-
-    def test_to_file_roundtrip(self):
-        handler = NumpyHandler()
-        arr = np.array([[1.5, 2.5], [3.5, 4.5]])
-        with tempfile.TemporaryDirectory() as tmpdir:
-            path = Path(tmpdir) / "test.npy"
-            handler.to_file(arr, path)
-            result = handler.from_file(path)
-            np.testing.assert_array_equal(result, arr)
+            assert path.stat().st_size > 0
 
 
 class TestNumpyHandlerFromFile:
-    """Test from_file method."""
+    """Test from_file method with file-like objects."""
 
-    def test_from_file_reads_correctly(self):
+    def test_from_file_roundtrip_1d(self):
+        handler = NumpyHandler()
+        arr = np.array([1.0, 2.0, 3.0])
+        buffer = BytesIO()
+        handler.to_file(arr, buffer)
+        buffer.seek(0)
+        result = handler.from_file(buffer)
+        np.testing.assert_array_equal(result, arr)
+
+    def test_from_file_roundtrip_2d(self):
+        handler = NumpyHandler()
+        arr = np.array([[1, 2], [3, 4]])
+        buffer = BytesIO()
+        handler.to_file(arr, buffer)
+        buffer.seek(0)
+        result = handler.from_file(buffer)
+        np.testing.assert_array_equal(result, arr)
+
+    def test_from_file_preserves_dtype(self):
+        handler = NumpyHandler()
+        arr = np.array([1, 2, 3], dtype=np.int32)
+        buffer = BytesIO()
+        handler.to_file(arr, buffer)
+        buffer.seek(0)
+        result = handler.from_file(buffer)
+        assert result.dtype == np.int32
+
+    def test_from_file_invalid_data_raises_error(self):
+        handler = NumpyHandler()
+        buffer = BytesIO(b"not valid npy data")
+        with pytest.raises(DeserializationError):
+            handler.from_file(buffer)
+
+    def test_from_file_with_real_file(self):
         handler = NumpyHandler()
         arr = np.array([10, 20, 30])
         with tempfile.TemporaryDirectory() as tmpdir:
             path = Path(tmpdir) / "test.npy"
-            np.save(path, arr)
-            result = handler.from_file(path)
+            with open(path, "wb") as f:
+                handler.to_file(arr, f)
+            with open(path, "rb") as f:
+                result = handler.from_file(f)
             np.testing.assert_array_equal(result, arr)
 
-    def test_from_file_nonexistent_raises_error(self):
-        handler = NumpyHandler()
-        with pytest.raises(DeserializationError):
-            handler.from_file(Path("/nonexistent/path.npy"))
 
-    def test_from_file_invalid_data_raises_error(self):
+class TestNumpyHandlerObjectArrays:
+    """Test object arrays (with pickle)."""
+
+    def test_object_array_roundtrip(self):
         handler = NumpyHandler()
-        with tempfile.TemporaryDirectory() as tmpdir:
-            path = Path(tmpdir) / "invalid.npy"
-            path.write_text("not valid npy data")
-            with pytest.raises(DeserializationError):
-                handler.from_file(path)
+        arr = np.array([{"key": "value"}, {"other": 123}], dtype=object)
+        buffer = BytesIO()
+        handler.to_file(arr, buffer)
+        buffer.seek(0)
+        result = handler.from_file(buffer)
+        assert result[0] == {"key": "value"}
+        assert result[1] == {"other": 123}

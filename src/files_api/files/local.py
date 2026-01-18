@@ -1,11 +1,14 @@
 """Local filesystem implementation."""
 
+import logging
 from pathlib import Path
-from typing import Any
+from typing import IO, Any
 
 from files_api.files.exceptions import FileExistsError, FileNotFoundError
 from files_api.files.factory import FileHandlerFactory
 from files_api.files.interface import IFileSystem
+
+logger = logging.getLogger(__name__)
 
 
 class LocalFileSystem(IFileSystem):
@@ -25,6 +28,7 @@ class LocalFileSystem(IFileSystem):
         self.base_path = Path(base_path)
         self.base_path.mkdir(parents=True, exist_ok=True)
         self.factory = FileHandlerFactory()
+        logger.info("Initialized LocalFileSystem at %s", self.base_path)
 
     def save(self, key: str, obj: Any) -> None:
         """Save object with given key.
@@ -41,16 +45,24 @@ class LocalFileSystem(IFileSystem):
             FileExistsError: If a file with this key already exists.
             SerializationError: If the object cannot be serialized.
         """
+        logger.debug("save() called with key=%r, obj_type=%s", key, type(obj).__name__)
+
         # Check if any file with this key already exists
-        if self._find_file(key) is not None:
+        existing = self._find_file(key)
+        if existing is not None:
+            logger.warning("Key %r already exists at %s", key, existing)
             raise FileExistsError(key)
 
-        # Get the appropriate handler and build the path
+        # Get the appropriate handler and build the full key with extension
         handler = self.factory.get_handler_for_object(obj)
-        file_path = self.base_path / f"{key}{handler.extension}"
+        full_key = f"{key}{handler.extension}"
+        logger.debug("Selected %s handler, full_key=%s", handler.type_name, full_key)
 
-        # Save the file
-        handler.to_file(obj, file_path)
+        # Save using handler with file-like object
+        with self._open(full_key, "wb") as f:
+            handler.to_file(obj, f)
+
+        logger.info("Saved key=%r using %s handler", key, handler.type_name)
 
     def get(self, key: str) -> Any:
         """Get object by key.
@@ -67,12 +79,24 @@ class LocalFileSystem(IFileSystem):
             FileNotFoundError: If the key does not exist.
             DeserializationError: If the file cannot be deserialized.
         """
-        file_path = self._find_file(key)
-        if file_path is None:
+        logger.debug("get() called with key=%r", key)
+
+        full_key = self._find_file(key)
+        if full_key is None:
+            logger.warning("Key %r not found in %s", key, self.base_path)
             raise FileNotFoundError(key)
 
+        # Get handler based on file extension
+        file_path = self.base_path / full_key
         handler = self.factory.get_handler_for_file(file_path)
-        return handler.from_file(file_path)
+        logger.debug("Found %s, using %s handler", full_key, handler.type_name)
+
+        # Load using handler with file-like object
+        with self._open(full_key, "rb") as f:
+            result = handler.from_file(f)
+
+        logger.info("Loaded key=%r using %s handler", key, handler.type_name)
+        return result
 
     def count(self, prefix: str = "") -> int:
         """Count files matching prefix.
@@ -85,10 +109,11 @@ class LocalFileSystem(IFileSystem):
         """
         pattern = f"{prefix}*" if prefix else "*"
         # Count files with known extensions
-        count = 0
+        total = 0
         for ext in [".json", ".npy"]:
-            count += len(list(self.base_path.glob(f"{pattern}{ext}")))
-        return count
+            total += len(list(self.base_path.glob(f"{pattern}{ext}")))
+        logger.debug("count(prefix=%r) = %d", prefix, total)
+        return total
 
     def exists(self, key: str) -> bool:
         """Check if key exists.
@@ -99,19 +124,36 @@ class LocalFileSystem(IFileSystem):
         Returns:
             True if the key exists (with any extension), False otherwise.
         """
-        return self._find_file(key) is not None
+        found = self._find_file(key) is not None
+        logger.debug("exists(key=%r) = %s", key, found)
+        return found
 
-    def _find_file(self, key: str) -> Path | None:
+    def _open(self, full_key: str, mode: str) -> IO[bytes]:
+        """Open a local file for the given key.
+
+        Args:
+            full_key: The full key including extension (e.g., "data.npy").
+            mode: The file mode ("rb" for read, "wb" for write).
+
+        Returns:
+            An open file object.
+        """
+        file_path = self.base_path / full_key
+        logger.debug("Opening %s with mode=%r", file_path, mode)
+        return open(file_path, mode)
+
+    def _find_file(self, key: str) -> str | None:
         """Find a file by key (checking all known extensions).
 
         Args:
             key: The key to find (without extension).
 
         Returns:
-            The path to the file if found, None otherwise.
+            The full key with extension if found, None otherwise.
         """
         for ext in [".json", ".npy"]:
-            path = self.base_path / f"{key}{ext}"
+            full_key = f"{key}{ext}"
+            path = self.base_path / full_key
             if path.exists():
-                return path
+                return full_key
         return None

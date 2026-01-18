@@ -2,6 +2,7 @@
 
 import json
 import tempfile
+from io import BytesIO
 from pathlib import Path
 
 import pytest
@@ -22,148 +23,139 @@ class TestJsonHandlerAttributes:
         assert handler.type_name == "json"
 
 
-class TestJsonHandlerSerialize:
-    """Test serialize method."""
+class TestJsonHandlerToFile:
+    """Test to_file method with file-like objects."""
 
-    def test_serialize_dict(self):
+    def test_to_file_dict(self):
         handler = JsonHandler()
         obj = {"key": "value", "number": 42}
-        result = handler.serialize(obj)
-        assert isinstance(result, bytes)
+        buffer = BytesIO()
+        handler.to_file(obj, buffer)
+        assert buffer.tell() > 0
 
-    def test_serialize_list(self):
+    def test_to_file_list(self):
         handler = JsonHandler()
         obj = [1, 2, 3, "four"]
-        result = handler.serialize(obj)
-        assert isinstance(result, bytes)
+        buffer = BytesIO()
+        handler.to_file(obj, buffer)
+        assert buffer.tell() > 0
 
-    def test_serialize_primitives(self):
+    def test_to_file_primitives(self):
         handler = JsonHandler()
         for obj in ["string", 42, 3.14, True, None]:
-            result = handler.serialize(obj)
-            assert isinstance(result, bytes)
+            buffer = BytesIO()
+            handler.to_file(obj, buffer)
+            assert buffer.tell() > 0
 
-    def test_serialize_nested_structure(self):
+    def test_to_file_nested_structure(self):
         handler = JsonHandler()
         obj = {"nested": {"deep": [1, 2, {"key": "value"}]}}
-        result = handler.serialize(obj)
-        assert isinstance(result, bytes)
+        buffer = BytesIO()
+        handler.to_file(obj, buffer)
+        assert buffer.tell() > 0
 
-    def test_serialize_unicode_strings(self):
+    def test_to_file_unicode_strings(self):
         handler = JsonHandler()
         obj = {"emoji": "🎉", "chinese": "中文", "arabic": "العربية"}
-        result = handler.serialize(obj)
-        assert isinstance(result, bytes)
+        buffer = BytesIO()
+        handler.to_file(obj, buffer)
+        assert buffer.tell() > 0
 
-    def test_serialize_includes_metadata_envelope(self):
+    def test_to_file_includes_metadata_envelope(self):
         handler = JsonHandler()
         obj = {"data": "test"}
-        result = handler.serialize(obj)
-        parsed = json.loads(result.decode("utf-8"))
+        buffer = BytesIO()
+        handler.to_file(obj, buffer)
+        buffer.seek(0)
+        parsed = json.loads(buffer.read().decode("utf-8"))
         assert "__type__" in parsed
         assert "__version__" in parsed
         assert "data" in parsed
 
-    def test_serialize_non_serializable_raises_error(self):
+    def test_to_file_non_serializable_raises_error(self):
         handler = JsonHandler()
 
         class NotSerializable:
             pass
 
+        buffer = BytesIO()
         with pytest.raises(SerializationError) as exc_info:
-            handler.serialize(NotSerializable())
+            handler.to_file(NotSerializable(), buffer)
         assert "NotSerializable" in str(exc_info.value)
 
-    def test_serialization_error_includes_object_type(self):
+    def test_to_file_error_includes_object_type(self):
         handler = JsonHandler()
 
         class MyCustomClass:
             pass
 
+        buffer = BytesIO()
         with pytest.raises(SerializationError) as exc_info:
-            handler.serialize(MyCustomClass())
+            handler.to_file(MyCustomClass(), buffer)
         assert exc_info.value.obj_type == "MyCustomClass"
 
-
-class TestJsonHandlerDeserialize:
-    """Test deserialize method."""
-
-    def test_deserialize_roundtrip_dict(self):
-        handler = JsonHandler()
-        obj = {"key": "value", "number": 42}
-        data = handler.serialize(obj)
-        result = handler.deserialize(data)
-        assert result == obj
-
-    def test_deserialize_roundtrip_list(self):
-        handler = JsonHandler()
-        obj = [1, 2, 3, "four"]
-        data = handler.serialize(obj)
-        result = handler.deserialize(data)
-        assert result == obj
-
-    def test_deserialize_roundtrip_nested(self):
-        handler = JsonHandler()
-        obj = {"nested": {"deep": [1, 2, {"key": "value"}]}}
-        data = handler.serialize(obj)
-        result = handler.deserialize(data)
-        assert result == obj
-
-    def test_deserialize_invalid_json_raises_error(self):
-        handler = JsonHandler()
-        with pytest.raises(DeserializationError):
-            handler.deserialize(b"not valid json")
-
-    def test_deserialize_missing_envelope_raises_error(self):
-        handler = JsonHandler()
-        # Valid JSON but missing envelope
-        data = json.dumps({"key": "value"}).encode("utf-8")
-        with pytest.raises(DeserializationError):
-            handler.deserialize(data)
-
-
-class TestJsonHandlerToFile:
-    """Test to_file method."""
-
-    def test_to_file_creates_file(self):
+    def test_to_file_with_real_file(self):
         handler = JsonHandler()
         obj = {"key": "value"}
         with tempfile.TemporaryDirectory() as tmpdir:
             path = Path(tmpdir) / "test.json"
-            handler.to_file(obj, path)
+            with open(path, "wb") as f:
+                handler.to_file(obj, f)
             assert path.exists()
-
-    def test_to_file_roundtrip(self):
-        handler = JsonHandler()
-        obj = {"nested": {"data": [1, 2, 3]}}
-        with tempfile.TemporaryDirectory() as tmpdir:
-            path = Path(tmpdir) / "test.json"
-            handler.to_file(obj, path)
-            result = handler.from_file(path)
-            assert result == obj
+            assert path.stat().st_size > 0
 
 
 class TestJsonHandlerFromFile:
-    """Test from_file method."""
+    """Test from_file method with file-like objects."""
 
-    def test_from_file_reads_correctly(self):
+    def test_from_file_roundtrip_dict(self):
+        handler = JsonHandler()
+        obj = {"key": "value", "number": 42}
+        buffer = BytesIO()
+        handler.to_file(obj, buffer)
+        buffer.seek(0)
+        result = handler.from_file(buffer)
+        assert result == obj
+
+    def test_from_file_roundtrip_list(self):
+        handler = JsonHandler()
+        obj = [1, 2, 3, "four"]
+        buffer = BytesIO()
+        handler.to_file(obj, buffer)
+        buffer.seek(0)
+        result = handler.from_file(buffer)
+        assert result == obj
+
+    def test_from_file_roundtrip_nested(self):
+        handler = JsonHandler()
+        obj = {"nested": {"deep": [1, 2, {"key": "value"}]}}
+        buffer = BytesIO()
+        handler.to_file(obj, buffer)
+        buffer.seek(0)
+        result = handler.from_file(buffer)
+        assert result == obj
+
+    def test_from_file_invalid_json_raises_error(self):
+        handler = JsonHandler()
+        buffer = BytesIO(b"not valid json")
+        with pytest.raises(DeserializationError):
+            handler.from_file(buffer)
+
+    def test_from_file_missing_envelope_raises_error(self):
+        handler = JsonHandler()
+        # Valid JSON but missing envelope
+        data = json.dumps({"key": "value"}).encode("utf-8")
+        buffer = BytesIO(data)
+        with pytest.raises(DeserializationError):
+            handler.from_file(buffer)
+
+    def test_from_file_with_real_file(self):
         handler = JsonHandler()
         obj = {"test": "data"}
         with tempfile.TemporaryDirectory() as tmpdir:
             path = Path(tmpdir) / "test.json"
-            handler.to_file(obj, path)
-            result = handler.from_file(path)
+            with open(path, "wb") as f:
+                handler.to_file(obj, f)
+            with open(path, "rb") as f:
+                result = handler.from_file(f)
             assert result == obj
-
-    def test_from_file_nonexistent_raises_error(self):
-        handler = JsonHandler()
-        with pytest.raises(DeserializationError):
-            handler.from_file(Path("/nonexistent/path.json"))
-
-    def test_from_file_invalid_json_raises_error(self):
-        handler = JsonHandler()
-        with tempfile.TemporaryDirectory() as tmpdir:
-            path = Path(tmpdir) / "invalid.json"
-            path.write_text("not valid json")
-            with pytest.raises(DeserializationError):
-                handler.from_file(path)
