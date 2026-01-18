@@ -5,8 +5,10 @@ This script demonstrates how to use the LocalFileSystem to save and retrieve
 different types of data with automatic format selection.
 
 Run with: uv run python scripts/usage_example.py
+       or: uv run python scripts/usage_example.py --debug  (for verbose logging)
 """
 
+import logging
 import sys
 import tempfile
 from pathlib import Path
@@ -20,6 +22,14 @@ from files_api.files import LocalFileSystem
 
 
 def main():
+    # Enable debug logging if --debug flag is passed
+    if "--debug" in sys.argv:
+        logging.basicConfig(
+            level=logging.DEBUG,
+            format="%(levelname)s:%(name)s:%(message)s",
+        )
+        print("Debug logging enabled\n")
+
     # Create a temporary directory for this example
     with tempfile.TemporaryDirectory() as tmpdir:
         print(f"Using temporary directory: {tmpdir}\n")

@@ -1,55 +1,161 @@
-# Python Repo Template
+# Files API
 
-A starting point for Python projects in Cursor, with built-in support for AI-assisted development and multi-agent collaboration.
+An intelligent file storage API for Python that automatically selects the optimal file format based on object type.
 
-## What You Get
+## Features
 
-### Development Stack
-- **uv** — Fast Python package management
-- **pytest** + **pytest-cov** — TDD workflow with coverage
-- **ruff** — Linting and formatting
+- **Automatic format selection** — numpy arrays → `.npy`, everything else → `.json`
+- **Simple interface** — `save`, `get`, `exists`, `count`
+- **File collision prevention** — raises error if key already exists
+- **Extensible** — add new handlers or storage backends easily
+- **S3-ready architecture** — designed for future s3fs integration
+- **Comprehensive logging** — debug production issues easily
 
-### AI Agent Workflow
-- **Context engineering** — Structured logs and implementation planning
-- **Session management** — `/session` command to set context
-- **Multi-agent safety** — Hooks prevent agents from stepping on each other's work
+## Installation
 
-### Cursor Hooks (Automated Enforcement)
+```bash
+# Clone the repository
+git clone https://github.com/orireshef/python-repo-template.git
+cd python-repo-template
 
-| Hook | What it does |
-|------|--------------|
-| `beforeSubmitPrompt` | Blocks prompts if no session context set |
-| `beforeReadFile` | Guards log access to active context only |
-| `afterFileEdit` | Tracks files, formats Python, syncs plan to master, auto-rotates logs |
-| `beforeShellExecution` | Blocks dangerous git commands |
-| `stop` | Logs session end |
-
-### Stateful Artifacts
-
-| File | Purpose |
-|------|---------|
-| `logs/.active` | Current agent's session state (context, log file, files touched) |
-| `IMPLEMENTATION_PLAN.md` | Cross-agent source of truth for all stories/tasks |
-| `logs/*.md` | Agent scratchpad for thinking and context offloading |
+# Install with uv
+uv sync
+```
 
 ## Quick Start
 
+```python
+from files_api.files import LocalFileSystem
+import numpy as np
+
+# Initialize storage
+fs = LocalFileSystem("./data")
+
+# Save a numpy array → automatically saved as .npy
+matrix = np.array([[1, 2, 3], [4, 5, 6]])
+fs.save("my_matrix", matrix)
+
+# Save a dictionary → automatically saved as .json
+config = {"name": "project", "version": "1.0"}
+fs.save("config", config)
+
+# Retrieve objects
+loaded_matrix = fs.get("my_matrix")  # Returns numpy array
+loaded_config = fs.get("config")      # Returns dict
+
+# Check existence and count
+fs.exists("my_matrix")  # True
+fs.count()              # 2
+fs.count("my_")         # 1 (prefix filter)
+```
+
+## API Reference
+
+### LocalFileSystem
+
+```python
+from files_api.files import LocalFileSystem
+
+fs = LocalFileSystem(base_path)
+```
+
+| Method | Description |
+|--------|-------------|
+| `save(key, obj)` | Save object with automatic format selection. Raises `FileExistsError` if key exists. |
+| `get(key)` | Retrieve object by key. Raises `FileNotFoundError` if missing. |
+| `exists(key)` | Check if key exists (returns bool). |
+| `count(prefix="")` | Count files, optionally filtered by prefix. |
+
+### Supported Types
+
+| Object Type | File Format | Handler |
+|-------------|-------------|---------|
+| `np.ndarray` | `.npy` | NumpyHandler |
+| `dict`, `list`, `str`, `int`, etc. | `.json` | JsonHandler |
+
+### Exceptions
+
+```python
+from files_api.files import (
+    FilesError,           # Base exception
+    SerializationError,   # Object cannot be serialized
+    DeserializationError, # File cannot be read
+    FileNotFoundError,    # Key doesn't exist
+    FileExistsError,      # Key already exists
+)
+```
+
+## Examples
+
+See [`scripts/usage_example.py`](scripts/usage_example.py) for a complete demonstration:
+
 ```bash
-# Clone and navigate
-git clone <this-repo> my-project
-cd my-project
+uv run python scripts/usage_example.py
+```
 
-# Install dependencies
-uv sync
+This shows:
+1. Saving and loading numpy arrays
+2. Saving and loading dictionaries/lists
+3. Checking existence and counting files
+4. Object arrays (numpy arrays containing Python objects)
 
-# Initialize context artifacts (if not present)
-# Run /init command in Cursor
+## Logging
 
-# Start a session
-# Run /session root (or /session <story-name>) in Cursor
+The API uses Python's standard logging. Enable debug logs to see what's happening:
 
+```python
+import logging
+logging.basicConfig(level=logging.DEBUG)
+
+# Now you'll see:
+# DEBUG:files_api.files.local:save() called with key='matrix', obj_type=ndarray
+# DEBUG:files_api.files.factory:Selected NumpyHandler for ndarray (shape=(2, 3), dtype=float64)
+# INFO:files_api.files.handlers.numpy_handler:Wrote numpy array (shape=(2, 3), dtype=float64)
+# INFO:files_api.files.local:Saved key='matrix' using numpy handler
+```
+
+## Architecture
+
+```
+IFileSystem (abstract)
+    └── LocalFileSystem
+    └── S3FileSystem (future)
+
+IFileHandler (abstract)  
+    └── NumpyHandler (.npy)
+    └── JsonHandler (.json)
+
+FileHandlerFactory
+    └── get_handler_for_object(obj) → IFileHandler
+    └── get_handler_for_file(path) → IFileHandler
+```
+
+### Extending for S3
+
+The architecture uses file-like objects (`IO[bytes]`) so handlers work with any storage backend:
+
+```python
+import s3fs
+
+class S3FileSystem(IFileSystem):
+    def __init__(self, bucket: str):
+        self.bucket = bucket
+        self.s3 = s3fs.S3FileSystem()
+    
+    def _open(self, key: str, mode: str):
+        return self.s3.open(f"s3://{self.bucket}/{key}", mode)
+```
+
+See [`DESIGN.md`](DESIGN.md) for full architecture details.
+
+## Development
+
+```bash
 # Run tests
 uv run pytest
+
+# Run tests with coverage
+uv run pytest --cov=src/files_api --cov-report=term-missing
 
 # Lint and format
 uv run ruff check .
@@ -59,52 +165,24 @@ uv run ruff format .
 ## Project Structure
 
 ```
-src/                    # Source code (src layout)
-tests/                  # Test files
-logs/                   # Agent scratchpad logs
-  .active               # Session state file
-.cursor/
-  hooks/                # Automated workflow hooks
-  rules/                # Cursor agent rules
-  skills/               # Reusable agent skills
-  commands/             # Custom commands (/init, /session)
-DESIGN.md               # System design and goals
-IMPLEMENTATION_PLAN.md  # Task tracking (syncs to master)
-memories.md             # Personal preferences
+src/files_api/
+├── __init__.py
+└── files/
+    ├── __init__.py          # Public exports
+    ├── interface.py          # IFileSystem abstract base
+    ├── local.py              # LocalFileSystem implementation
+    ├── factory.py            # FileHandlerFactory
+    ├── exceptions.py         # Custom exceptions
+    └── handlers/
+        ├── __init__.py
+        ├── base.py           # IFileHandler abstract base
+        ├── numpy_handler.py  # .npy file handler
+        └── json_handler.py   # .json file handler
+
+tests/files/                  # Test suite (77 tests, 100% coverage)
+scripts/usage_example.py      # Usage demonstration
 ```
 
-## Cursor Commands
+## License
 
-| Command | Purpose |
-|---------|---------|
-| `/init` | Initialize context artifacts (DESIGN.md, logs/, IMPLEMENTATION_PLAN.md, etc.) |
-| `/session <name>` | Set session context to a story or `root` for ad-hoc work |
-
-## Workflow Overview
-
-### Session Start
-1. Run `/session <story-name>` or `/session root`
-2. Agent reads recent logs and IMPLEMENTATION_PLAN.md
-3. If story is `planned`, agent does Story Planning before implementation
-
-### Every Turn
-1. Check context in `logs/.active`
-2. Log thinking to active log file
-3. Stay in scope — ask before switching context
-4. Update IMPLEMENTATION_PLAN.md when tasks change (auto-syncs to master)
-
-### Multi-Agent Safety
-- Each agent is locked to their session context
-- Edits to other agents' stories are **automatically reverted**
-- IMPLEMENTATION_PLAN.md syncs to master after every edit
-- Log files auto-rotate when they exceed ~4000 chars
-
-### TDD & Git Flow
-- Write tests before implementation
-- Atomic commits (one per function/test)
-- Quick tasks → commit to `master`
-- Story work → `feature/<name>` branch with PR
-
-## Full Documentation
-
-See `.cursor/rules/workflow.mdc` for complete workflow rules.
+MIT
