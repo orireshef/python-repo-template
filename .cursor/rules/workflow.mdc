@@ -60,19 +60,32 @@ When in doubt, ASK. Don't assume — get human guidance.
 - **Write freely:** Logs are scratchpads. Don't over-structure — just dump your thinking.
 - **No code dumps:** Don't copy full files into logs. Use `git diff` to understand changes.
 
-## Working with IMPLEMENTATION_PLAN.md (Story Context)
+## Working with IMPLEMENTATION_PLAN.md
 
-When in a story context, **only read/edit your story's section** using grep:
+> **⚠️ WARNING: NEVER modify stories that aren't assigned to you!**
+> 
+> Other agents may be working on other stories concurrently. Modifying their sections
+> will cause conflicts and break their work. If you need something from another story,
+> **ASK THE HUMAN** to coordinate.
+
+**Your story** = the one matching your context in `logs/.active`
+
+**When in a story context**, only read/edit your story's section using grep:
 
 ```bash
-# Read your story's info
-grep -A 5 "| S1 |" IMPLEMENTATION_PLAN.md
+# Read your story's info (replace S1 with your story ID)
+grep -A 10 "| S1 |" IMPLEMENTATION_PLAN.md
 
 # Find all tasks for your story
-grep "| S1 |" IMPLEMENTATION_PLAN.md
+grep "your-story-name" IMPLEMENTATION_PLAN.md
 ```
 
-This prevents accidentally modifying other agents' work. The `sync-plan.sh` hook auto-commits changes to master.
+**When in root context**, you may:
+- Add new stories (status: `planned`)
+- Read any section
+- **NOT** modify existing stories unless you first claim them via `/session <story>`
+
+The `sync-plan.sh` hook auto-commits IMPLEMENTATION_PLAN.md changes to master.
 
 ## Git Branching (varies by scope)
 | Scope | Branch | Merge |
