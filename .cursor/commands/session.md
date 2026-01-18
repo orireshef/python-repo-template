@@ -11,8 +11,11 @@ Start or continue a session with the specified context.
 
 1. **Sync IMPLEMENTATION_PLAN.md from master:**
    ```bash
-   git fetch origin master && git checkout origin/master -- IMPLEMENTATION_PLAN.md
+   # Fetch and merge just IMPLEMENTATION_PLAN.md from master
+   git fetch origin master
+   git show origin/master:IMPLEMENTATION_PLAN.md > IMPLEMENTATION_PLAN.md
    ```
+   This overwrites your local copy with master's version at session start.
 
 2. **Update `logs/.active`:**
    ```yaml

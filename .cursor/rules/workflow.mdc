@@ -53,11 +53,11 @@ Some protections are enforced by hooks, others require manual discipline:
 | Track files edited | `afterFileEdit` ✅ | — |
 | Format Python files | `afterFileEdit` ✅ | — |
 | Sync plan to master | `afterFileEdit` ✅ | — |
+| **Revert edits to others' stories** | `afterFileEdit` ✅ | sync-plan.sh detects & reverts |
 | Block dangerous git | `beforeShellExecution` ✅ | — |
 | Log session end | `stop` ✅ | — |
 | **Context injection at start** | ❌ | Run `/session` command manually |
-| **Pull plan from master** | ❌ | `/session` runs git fetch |
-| **Block edits to others' stories** | ❌ | **Check ownership before editing** |
+| **Pull plan from master** | ❌ | `/session` overwrites with master |
 | **Save state before compaction** | ❌ | **Log frequently throughout session** |
 
 **Critical manual requirements:**
@@ -115,8 +115,12 @@ grep "your-story-name" IMPLEMENTATION_PLAN.md
 3. If root context: only edit unassigned stories, or ask permission
 
 **Sync behavior:**
-- `/session` command pulls IMPLEMENTATION_PLAN.md from master
-- `sync-plan.sh` (afterFileEdit hook) commits and pushes changes to master
+- `/session` command overwrites local IMPLEMENTATION_PLAN.md with master's version
+- `sync-plan.sh` (afterFileEdit hook):
+  - Fetches latest from master before pushing
+  - Detects if you modified another agent's assigned story
+  - **Reverts your edit** if conflict detected, logs warning to your log file
+  - Pushes to master if no conflict
 - `session-end.sh` (stop hook) logs session end to current log file
 
 ## Git Branching (varies by scope)
