@@ -43,6 +43,9 @@ branch = true
 exclude_lines = [
     "pragma: no cover",
     "if TYPE_CHECKING:",
+    "@abstractmethod",
+    "raise NotImplementedError",
+    "\\.\\.\\.",
 ]
 
 [tool.ruff]

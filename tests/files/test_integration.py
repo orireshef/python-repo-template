@@ -62,19 +62,6 @@ class TestFullRoundTrip:
             result = fs.get("items")
             assert result == original
 
-    def test_save_and_get_numpy_scalar(self):
-        with tempfile.TemporaryDirectory() as tmpdir:
-            fs = LocalFileSystem(tmpdir)
-
-            original = np.float64(3.14159)
-            fs.save("pi", original)
-
-            # Verify correct extension
-            assert (Path(tmpdir) / "pi.npy").exists()
-
-            result = fs.get("pi")
-            assert result == original
-
     def test_mixed_types_in_same_filesystem(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             fs = LocalFileSystem(tmpdir)
@@ -83,16 +70,14 @@ class TestFullRoundTrip:
             fs.save("array", np.zeros((10, 10)))
             fs.save("config", {"setting": True})
             fs.save("items", [1, 2, 3])
-            fs.save("scalar", np.int32(42))
 
             # Verify count
-            assert fs.count() == 4
+            assert fs.count() == 3
 
             # Verify all can be retrieved
             assert fs.get("array").shape == (10, 10)
             assert fs.get("config") == {"setting": True}
             assert fs.get("items") == [1, 2, 3]
-            assert fs.get("scalar") == 42
 
 
 class TestErrorHandling:

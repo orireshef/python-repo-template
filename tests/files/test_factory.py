@@ -25,17 +25,19 @@ class TestFileHandlerFactoryForObject:
         handler = factory.get_handler_for_object(obj)
         assert isinstance(handler, NumpyHandler)
 
-    def test_numpy_scalar_float64_returns_numpy_handler(self):
+    def test_numpy_scalar_float64_returns_json_handler(self):
+        """Numpy scalars are not ndarrays, so they go to JSON."""
         factory = FileHandlerFactory()
         obj = np.float64(3.14)
         handler = factory.get_handler_for_object(obj)
-        assert isinstance(handler, NumpyHandler)
+        assert isinstance(handler, JsonHandler)
 
-    def test_numpy_scalar_int32_returns_numpy_handler(self):
+    def test_numpy_scalar_int32_returns_json_handler(self):
+        """Numpy scalars are not ndarrays, so they go to JSON."""
         factory = FileHandlerFactory()
         obj = np.int32(42)
         handler = factory.get_handler_for_object(obj)
-        assert isinstance(handler, NumpyHandler)
+        assert isinstance(handler, JsonHandler)
 
     def test_dict_returns_json_handler(self):
         factory = FileHandlerFactory()

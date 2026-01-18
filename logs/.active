@@ -22,3 +22,4 @@ files:
   - src/files_api/files/factory.py
   - tests/files/test_local_filesystem.py
   - tests/files/test_integration.py
+  - scripts/usage_example.py

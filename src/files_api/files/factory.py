@@ -3,6 +3,8 @@
 from pathlib import Path
 from typing import Any
 
+import numpy as np
+
 from files_api.files.handlers.base import IFileHandler
 from files_api.files.handlers.json_handler import JsonHandler
 from files_api.files.handlers.numpy_handler import NumpyHandler
@@ -12,7 +14,8 @@ class FileHandlerFactory:
     """Factory for selecting the appropriate file handler.
 
     Selects handlers based on object type (for saving) or file extension
-    (for loading). Priority: numpy objects first, then JSON fallback.
+    (for loading). Only numpy ndarrays use NumpyHandler, everything else
+    falls back to JsonHandler.
     """
 
     def __init__(self):
@@ -28,7 +31,7 @@ class FileHandlerFactory:
         """Select handler based on object type.
 
         Priority:
-        1. Objects with 'dtype' attribute → NumpyHandler
+        1. np.ndarray → NumpyHandler
         2. Everything else → JsonHandler (fallback)
 
         Args:
@@ -37,8 +40,8 @@ class FileHandlerFactory:
         Returns:
             The appropriate handler for the object type.
         """
-        # Check for numpy objects (anything with dtype attribute)
-        if hasattr(obj, "dtype"):
+        # Only numpy ndarrays use NumpyHandler
+        if isinstance(obj, np.ndarray):
             return self._numpy_handler
 
         # Fallback to JSON for everything else

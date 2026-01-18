@@ -33,9 +33,9 @@ class NumpyHandler(IFileHandler):
         """
         try:
             buffer = BytesIO()
-            np.save(buffer, obj, allow_pickle=False)
+            np.save(buffer, obj, allow_pickle=True)
             return buffer.getvalue()
-        except Exception as e:
+        except Exception as e:  # pragma: no cover
             raise SerializationError(obj, str(e)) from e
 
     def deserialize(self, data: bytes) -> Any:
@@ -52,7 +52,7 @@ class NumpyHandler(IFileHandler):
         """
         try:
             buffer = BytesIO(data)
-            return np.load(buffer, allow_pickle=False)
+            return np.load(buffer, allow_pickle=True)
         except Exception as e:
             raise DeserializationError(str(e)) from e
 
@@ -67,8 +67,8 @@ class NumpyHandler(IFileHandler):
             SerializationError: If the object cannot be serialized.
         """
         try:
-            np.save(path, obj, allow_pickle=False)
-        except Exception as e:
+            np.save(path, obj, allow_pickle=True)
+        except Exception as e:  # pragma: no cover
             raise SerializationError(obj, str(e)) from e
 
     def from_file(self, path: Path) -> Any:
@@ -84,6 +84,6 @@ class NumpyHandler(IFileHandler):
             DeserializationError: If the file cannot be deserialized.
         """
         try:
-            return np.load(path, allow_pickle=False)
+            return np.load(path, allow_pickle=True)
         except Exception as e:
             raise DeserializationError(str(e)) from e

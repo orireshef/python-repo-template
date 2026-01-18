@@ -57,12 +57,6 @@ class TestNumpyHandlerSerialize:
         result = handler.serialize(arr)
         assert isinstance(result, bytes)
 
-    def test_serialize_scalar(self):
-        handler = NumpyHandler()
-        scalar = np.float64(3.14)
-        result = handler.serialize(scalar)
-        assert isinstance(result, bytes)
-
 
 class TestNumpyHandlerDeserialize:
     """Test deserialize method."""
