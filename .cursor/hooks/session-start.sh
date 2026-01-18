@@ -8,6 +8,12 @@ input=$(cat)
 workspace_root=$(echo "$input" | jq -r '.workspace_roots[0] // "."')
 cd "$workspace_root" 2>/dev/null || cd "$(dirname "$0")/../.."
 
+# Sync IMPLEMENTATION_PLAN.md from master to ensure we have latest
+if [[ -d ".git" ]]; then
+    git fetch origin master 2>/dev/null
+    git checkout origin/master -- IMPLEMENTATION_PLAN.md 2>/dev/null
+fi
+
 # Read current active context from .active file
 context="root"
 active_files=""
@@ -26,7 +32,7 @@ fi
 # Read IMPLEMENTATION_PLAN.md to find first planned story
 suggested_story=""
 if [[ -f "IMPLEMENTATION_PLAN.md" ]]; then
-    suggested_story=$(grep -E '\|\s*S[0-9]+\s*\|.*\|\s*planned\s*\|' IMPLEMENTATION_PLAN.md | head -1 | sed 's/.*|\s*\(S[0-9]*\)\s*|.*/\1/')
+    suggested_story=$(grep -oE '\|\s*[A-Za-z0-9_-]+\s*\|[^|]*\|\s*planned\s*\|' IMPLEMENTATION_PLAN.md | head -1 | sed 's/|//g' | awk '{print $1}')
 fi
 
 # Build context summary

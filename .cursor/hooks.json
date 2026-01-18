@@ -3,6 +3,7 @@
   "hooks": {
     "sessionStart": [{ "command": "./.cursor/hooks/session-start.sh" }],
     "beforeReadFile": [{ "command": "./.cursor/hooks/file-guard.sh" }],
+    "beforeFileEdit": [{ "command": "./.cursor/hooks/plan-guard.sh" }],
     "afterFileEdit": [
       { "command": "./.cursor/hooks/track-files.sh" },
       { "command": "./.cursor/hooks/format.sh" },

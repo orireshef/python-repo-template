@@ -82,10 +82,13 @@ grep "your-story-name" IMPLEMENTATION_PLAN.md
 
 **When in root context**, you may:
 - Add new stories (status: `planned`)
+- Modify stories with status `planned` (not yet assigned)
 - Read any section
-- **NOT** modify existing stories unless you first claim them via `/session <story>`
+- **Assigned/in-progress stories require user permission** — `plan-guard.sh` will ask
 
-The `sync-plan.sh` hook auto-commits IMPLEMENTATION_PLAN.md changes to master.
+**Sync behavior:**
+- `session-start.sh` pulls IMPLEMENTATION_PLAN.md from master at session start
+- `sync-plan.sh` commits and pushes changes to master after edits
 
 ## Git Branching (varies by scope)
 | Scope | Branch | Merge |
