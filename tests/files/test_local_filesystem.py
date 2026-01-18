@@ -136,6 +136,28 @@ class TestLocalFileSystemCount:
             assert fs.count("nonexistent_") == 0
 
 
+class TestLocalFileSystemOpen:
+    """Test _open method (internal file-like object provider)."""
+
+    def test_open_returns_writable_file_object(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            fs = LocalFileSystem(tmpdir)
+            with fs._open("test.txt", "wb") as f:
+                f.write(b"hello")
+            assert (Path(tmpdir) / "test.txt").exists()
+            assert (Path(tmpdir) / "test.txt").read_bytes() == b"hello"
+
+    def test_open_returns_readable_file_object(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            fs = LocalFileSystem(tmpdir)
+            # Create file first
+            (Path(tmpdir) / "test.txt").write_bytes(b"world")
+            # Read via _open
+            with fs._open("test.txt", "rb") as f:
+                content = f.read()
+            assert content == b"world"
+
+
 class TestLocalFileSystemExists:
     """Test exists method."""
 
